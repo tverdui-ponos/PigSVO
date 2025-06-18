@@ -26,44 +26,11 @@ def timer(seconds, flag):
 
 class EngineFunc:
 	def __init__(self):
-		self._cached_fonts = {}
-		self._cached_text = {}
+
+
 		self._image_libraly = {}
 		self._sound_library = {}
 		self._music_library = {}
-
-	def make_font(self,fonts, size):
-		available = pg.font.get_fonts()
-		# get_fonts() returns a list of lowercase spaceless font names 
-		choices = map(lambda x:x.lower().replace(' ', ''), fonts)
-		for choice in choices:
-			if choice in available:
-				return pg.font.SysFont(choice, size)
-		return pg.font.Font(None, size)
-
-	def get_font(self,font_preferences, size):
-		key = str(font_preferences) + '|' + str(size)
-		font = self._cached_fonts.get(key, None)
-		if font == None:
-			font = self.make_font(font_preferences, size)
-			self._cached_fonts[key] = font
-		return font
-
-
-	
-	def create_text(self,text, fonts, size, color):
-		key = '|'.join(map(str, (fonts, size, color, text)))
-		image = self._cached_text.get(key, None)
-		if image == None:
-			font = self.get_font(fonts, size)
-			image = font.render(text, True, color)
-			self._cached_text[key] = image
-		return image
-
-
-
-
-
 
 
 	
@@ -112,28 +79,45 @@ class Object(pg.sprite.Sprite):
 		self.rect = self.model.get_rect(center=(self._x, self._y))
 	def spawn_model(self,screen):
 		return screen.blit(self.model, self.rect)
-	@property
-	def x(self):
-		return self._x
-	@property
-	def y(self):
-		return self._y
-	@property
-	def width(self):
-		return self._width
-	@property
-	def height(self):
-		return self._height
+	def __getattr__(self, atr):
+		return atr
 
 
 
 class Interface:
 	def __init__(self,x,y,width,height):
-		self.Font = engine.get_font('arial',50)
+		#self.Font = self.get_font('arial',50)
 		self._x = x
 		self._y = y
 		self._width = width
 		self._height = height
+		self._cached_text = {}
+		self._cached_fonts = {}
+	def make_font(self,fonts, size):
+		available = pg.font.get_fonts()
+		# get_fonts() returns a list of lowercase spaceless font names 
+		choices = map(lambda x:x.lower().replace(' ', ''), fonts)
+		for choice in choices:
+			if choice in available:
+				return pg.font.SysFont(choice, size)
+		return pg.font.Font(None, size)
+
+	def get_font(self,font_preferences, size):
+		key = str(font_preferences) + '|' + str(size)
+		font = self._cached_fonts.get(key, None)
+		if font == None:
+			font = self.make_font(font_preferences, size)
+			self._cached_fonts[key] = font
+		return font
+
+	def create_text(self,text, fonts, size, color):
+		key = '|'.join(map(str, (fonts, size, color, text)))
+		image = self._cached_text.get(key, None)
+		if image == None:
+			font = self.get_font(fonts, size)
+			image = font.render(text, True, color)
+			self._cached_text[key] = image
+		return image
 	def __getattr__(self, atr):
 		return atr
 
@@ -142,14 +126,15 @@ class Inventory(Interface):
 	def __init__(self,x,y,width,height):
 		super().__init__(x,y,width,height)
 		self.inv = [[],[]]
-		#self.text_inv = {}
 	def add_weapon(self,weapon,name):
 		self.inv[0].append(weapon)
 		self.inv[1].append(name)
-		#cout = 0
-		#for i in range(self.inv):
-			#pass
-
+	def choose_weapon(self,ind,weapon):
+		del weapon
+		engine.play_sound('effects/ammo_pickup.mp3')
+		if ind < len(self.inv[0]):
+			return self.inv[0][ind]  
+		return None
 
 
 class NPC(pg.sprite.Sprite):
@@ -213,8 +198,8 @@ class Player(NPC):
 	def __init__(self,x,y):
 		super().__init__(x,y,hp=100, speed=10, damage=100, filename="player/serega.png", width=150, height=100, name='player')
 		self.inventory = Inventory(10,100, 20, 20)
-		self.fists = Fists(self)
-		self.inventory.add_weapon(self.fists,'Руки')
+		self.fists = None 
+		self.inventory.add_weapon(Fists(self),'Руки')
 		self.attack_rect = None
 
 
@@ -236,7 +221,7 @@ class Weapon:
 		self._damage = damage
 		self._width = width
 		self._height = height
-		engine.play_sound('effects/ammo_pickup.mp3')
+		
 
 class MeleeWeapon(Weapon):
 	def __init__(self,player,width,height,damage):
@@ -299,7 +284,7 @@ class Game:
 		
 		#Engine Init
 		self.screen = pg.display.set_mode((1020,640))
-
+		self.interface = Interface(0,0,0,0)
 		self.clock = pg.time.Clock()
 		self.timer = 0
 		pg.time.set_timer(pg.USEREVENT, 100, False)
@@ -310,15 +295,13 @@ class Game:
 
 		# Object
 		self.player = Player(100,100)
-		self.inventory = []
-		self.inventory.append(Fists(self.player))
 
 		self.objects = []
 		self.collide_objects = []
 		self.pigs = []
 
 		self.background = engine.get_image('grass.png', 1024,640)
-		self.hp_text = engine.create_text(f'HP:{self.player.hp}','arial',60,(0,0,0))
+		self.hp_text = self.interface.create_text(f'HP:{self.player.hp}','arial',60,(0,0,0))
 		engine.play_music('music/ambient1.mp3', -1)
 	def handle_events(self):
 
@@ -328,30 +311,35 @@ class Game:
 			if event.type == pg.QUIT:
 				self.done = True
 			# Attack Animation
-			elif event.type == pg.MOUSEBUTTONDOWN:
-				if event.button == 1:
-					if pg.mouse.get_pos()[0] < self.player.rect.x and pg.mouse.get_pos()[1]> self.player.rect.y:
-						self.player.fists.spawn_hit_left(self.screen)
-						engine.play_sound('hits/hit.mp3')
-					elif pg.mouse.get_pos()[0] > self.player.rect.x and pg.mouse.get_pos()[1]> self.player.rect.y and pg.mouse.get_pos()[0]>pg.mouse.get_pos()[1]:
-						self.player.fists.spawn_hit_right(self.screen)
-						engine.play_sound('hits/hit.mp3')
-					elif pg.mouse.get_pos()[1] < self.player.rect.y and pg.mouse.get_pos()[0] > self.player.rect.x:
-						self.player.fists.spawn_hit_top(self.screen)
-						engine.play_sound('hits/hit.mp3')
-					elif pg.mouse.get_pos()[1] > self.player.rect.y and pg.mouse.get_pos()[0] > self.player.rect.x:
-						self.player.fists.spawn_hit_bottom(self.screen)
-						engine.play_sound('hits/hit.mp3')
-			elif event.type == pg.KEYDOWN:
+			try:
+				if event.type == pg.MOUSEBUTTONDOWN:
+					if event.button == 1:
+						if pg.mouse.get_pos()[0] < self.player.rect.x and pg.mouse.get_pos()[1]> self.player.rect.y:
+							self.player.fists.spawn_hit_left(self.screen)
+							engine.play_sound('hits/hit.mp3')
+						elif pg.mouse.get_pos()[0] > self.player.rect.x and pg.mouse.get_pos()[1]> self.player.rect.y and pg.mouse.get_pos()[0]>pg.mouse.get_pos()[1]:
+							self.player.fists.spawn_hit_right(self.screen)
+							engine.play_sound('hits/hit.mp3')
+						elif pg.mouse.get_pos()[1] < self.player.rect.y and pg.mouse.get_pos()[0] > self.player.rect.x:
+							self.player.fists.spawn_hit_top(self.screen)
+							engine.play_sound('hits/hit.mp3')
+						elif pg.mouse.get_pos()[1] > self.player.rect.y and pg.mouse.get_pos()[0] > self.player.rect.x:
+							self.player.fists.spawn_hit_bottom(self.screen)
+							engine.play_sound('hits/hit.mp3')
+			except AttributeError:
+				pass
+			if event.type == pg.KEYDOWN:
 				if event.key == pg.K_x:
 					self.pigs.append(Pig(pg.mouse.get_pos()[0], pg.mouse.get_pos()[1]))
 					print('x')
 				if event.key == pg.K_f:
-					#self.objects.append(Object(pg.mouse.get_pos()[0],pg.mouse.get_pos()[1],(f'object/trees/tree{r.randint(1,6)}.png'), 200,300))
 					self.collide_objects.append(Object(pg.mouse.get_pos()[0],pg.mouse.get_pos()[1],(f'object/trees/tree{r.randint(1,6)}.png'), 200,300))
+				if event.key == pg.K_i:
+					self.player.fists = self.player.inventory.choose_weapon(0, None)
+
+
 
 			#Ai pig
-			#try:
 			for _pig in self.pigs:
 				if event.type == pg.USEREVENT:
 					self.timer += 1
@@ -360,18 +348,19 @@ class Game:
 					if self.timer > 40:
 						engine.play_sound(f'pig/pig_idle{r.randint(1,3)}.ogg')
 						self.timer = 0
-			#except AttributeError:
-				#pass
 	def update(self):
-		# Sprite melee attack	
-		if self.player.fists.is_attacking == True:
-			self.player.fists.attack_frame += 1
-			if self.player.fists.attack_frame >= 1:
-				self.player.attack_rect = None
-			if self.player.fists.attack_frame >= 5:
-				self.player.fists.is_attacking = False
-				self.player.fists.attack_animation = None
-				self.player.fists.attack_frame = 0
+		# Sprite melee attack
+		try:	
+			if self.player.fists.is_attacking == True:
+				self.player.fists.attack_frame += 1
+				if self.player.fists.attack_frame >= 1:
+					self.player.attack_rect = None
+				if self.player.fists.attack_frame >= 5:
+					self.player.fists.is_attacking = False
+					self.player.fists.attack_animation = None
+					self.player.fists.attack_frame = 0
+		except AttributeError:
+			pass
 		# Input
 		pressed = pg.key.get_pressed()
 		if pressed[pg.K_w]:
@@ -422,33 +411,35 @@ class Game:
 	def render(self):
 		# Background
 		self.screen.blit(self.background, (0,0))
-		# Character
 		
+		# Object
 		if self.collide_objects:
 			for _obj in self.collide_objects:
 				_obj.spawn_model(self.screen)
+		# Character
 		for _pig in self.pigs:
 			_pig.spawn_model(self.screen)
-		'''except:
-			pass'''
 		self.player.spawn_model(self.screen)
 
 		# Render attack animation
-		if self.player.fists.is_attacking == True:
-			if self.player.fists.attack_animation == "right":
-				self.player.fists.spawn_hit_right(self.screen)
-				self.player.attack_rect = None
-			elif self.player.fists.attack_animation == "left":
-				self.player.fists.spawn_hit_left(self.screen)
-				self.player.attack_rect = None
-			elif self.player.fists.attack_animation == "top":
-				self.player.fists.spawn_hit_top(self.screen)
-				self.player.attack_rect = None
-			elif self.player.fists.attack_animation == "bottom":
-				self.player.fists.spawn_hit_bottom(self.screen)
-				self.player.attack_rect = None
+		try:
+			if self.player.fists.is_attacking == True:
+				if self.player.fists.attack_animation == "right":
+					self.player.fists.spawn_hit_right(self.screen)
+					self.player.attack_rect = None
+				elif self.player.fists.attack_animation == "left":
+					self.player.fists.spawn_hit_left(self.screen)
+					self.player.attack_rect = None
+				elif self.player.fists.attack_animation == "top":
+					self.player.fists.spawn_hit_top(self.screen)
+					self.player.attack_rect = None
+				elif self.player.fists.attack_animation == "bottom":
+					self.player.fists.spawn_hit_bottom(self.screen)
+					self.player.attack_rect = None
+		except AttributeError:
+			pass
 		# HUD
-		self.hp_text = engine.create_text(f'HP:{self.player.hp}','arial',60,(0,0,0))
+		self.hp_text = self.interface.create_text(f'HP:{self.player.hp}','arial',60,(0,0,0))
 		self.screen.blit(self.hp_text, (10,10))
 		# Update Display
 		pg.display.flip()
@@ -460,7 +451,7 @@ class Game:
 			self.update()
 			self.render()
 			self.clock.tick(60)
-			print( self.pigs,self.collide_objects, self.player.inventory.inv)
+			print( self.pigs,self.collide_objects, self.player.inventory.inv, self.player.fists)
 
 if __name__ == "__main__":
 	game = Game()
