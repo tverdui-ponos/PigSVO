@@ -71,16 +71,30 @@ engine = EngineFunc()
 class Object(pg.sprite.Sprite):
 	def __init__(self,x,y,filename,width,height):
 		pg.sprite.Sprite.__init__(self)
+
 		self._x = x
 		self._y = y
 		self._width = width
 		self._height = height
-		self.model = engine.get_image(filename, self._width, self._height).convert_alpha()
-		self.rect = self.model.get_rect(center=(self._x, self._y))
+		if filename != None:
+			self.model = engine.get_image(filename, self._width, self._height).convert_alpha()
+			self.rect = self.model.get_rect(center=(self._x, self._y))
 	def spawn_model(self,screen):
 		return screen.blit(self.model, self.rect)
 	def __getattr__(self, atr):
 		return atr
+	@property
+	def width(self):
+		return self._width
+	@property
+	def height(self):
+		return self._height
+	@width.setter
+	def width(self, width):
+		self._width = width
+	@height.setter
+	def width(self, height):
+		self._height = height
 
 
 
@@ -93,9 +107,9 @@ class Interface:
 		self._height = height
 		self._cached_text = {}
 		self._cached_fonts = {}
+
 	def make_font(self,fonts, size):
 		available = pg.font.get_fonts()
-		# get_fonts() returns a list of lowercase spaceless font names 
 		choices = map(lambda x:x.lower().replace(' ', ''), fonts)
 		for choice in choices:
 			if choice in available:
@@ -118,6 +132,7 @@ class Interface:
 			image = font.render(text, True, color)
 			self._cached_text[key] = image
 		return image
+
 	def __getattr__(self, atr):
 		return atr
 
@@ -148,6 +163,7 @@ class NPC(pg.sprite.Sprite):
 		
 		self._width = width
 		self._height = height
+		
 		self.model = engine.get_image(filename, self._width, self._height).convert_alpha()
 		self.rect = self.model.get_rect(center=(self._x,self._y))
 		self._name = name
@@ -189,18 +205,24 @@ class NPC(pg.sprite.Sprite):
 		self._hp = hp
 	
 
-	'''def __del__(self):
-		print('dead')
-		play_sound(f'{self.name}/dead.mp3')'''
-	
-
 class Player(NPC):
 	def __init__(self,x,y):
 		super().__init__(x,y,hp=100, speed=10, damage=100, filename="player/serega.png", width=150, height=100, name='player')
 		self.inventory = Inventory(10,100, 20, 20)
-		self.fists = None 
+		self.weapon = None 
 		self.inventory.add_weapon(Fists(self),'Руки')
+		self.inventory.add_weapon(Bat(self),'Бита')
 		self.attack_rect = None
+	def update_weapon_position(self):
+		if self.weapon and hasattr(self.weapon, 'update_position'):
+			self.weapon.update_position()
+	def spawn_model(self,screen):
+		screen.blit(self.model, self.rect)
+		if self.weapon and hasattr(self.weapon ,'model'):
+			try:
+				screen.blit(self.weapon.model, self.weapon.rect)
+			except TypeError:
+				pass
 
 
 
@@ -216,72 +238,108 @@ class Pig(NPC):
 		print('dead')
 		engine.play_sound('pig/death.mp3')
 
-class Weapon:
-	def __init__(self,damage,width,height):
+class Weapon(Object):
+	def __init__(self,damage,width,height,player,filename,x,y):
+		super().__init__(filename=filename, width=width, height=height, x=player.x, y=player.y)
 		self._damage = damage
+		self._player = player
+		self._x = self._player.x
+		self._y = self._player.y
 		self._width = width
 		self._height = height
+
+	def update_position(self):
+		try:
+			self.rect.center = (self._player.rect.centerx,self._player.rect.centery)
+		except AttributeError:
+			pass
+
 		
 
 class MeleeWeapon(Weapon):
-	def __init__(self,player,width,height,damage):
-		super().__init__(damage,width,height)
-		self._damage = damage
-		self.player = player
-		self._width = width
-		self._height = height
-		self.hit_right = engine.get_image('hits/hit_right.png', self._width * 2 , self._height * 2).convert_alpha()
+	def __init__(self,player,width,height,damage,filename):
+		super().__init__(player=player,width=width,height=height,damage=damage,filename=filename,x=player.x,y=player.y)
+		self._player = player
+		self.hit_right = engine.get_image('weapon/hit_right.png', self._width , self._height).convert_alpha()
 		self.hit_right_rect = self.hit_right.get_rect()
-		self.hit_left = engine.get_image('hits/hit_left.png', self._width * 2 , self._height * 2).convert_alpha()
+		self.hit_left = engine.get_image('weapon/hit_left.png', self._width , self._height).convert_alpha()
 		self.hit_left_rect = self.hit_left.get_rect()
-		self.hit_bottom = engine.get_image('hits/hit_bottom.png', self._width * 2 , self._height * 2).convert_alpha()
-		self.hit_bottom_rect = self.hit_bottom.get_rect(center=(self.player.rect.x,self.player.rect.y))
-		self.hit_top = engine.get_image('hits/hit_top.png', self._width * 2 , self._height * 2).convert_alpha()
+		self.hit_bottom = engine.get_image('weapon/hit_bottom.png', self._width , self._height).convert_alpha()
+		self.hit_bottom_rect = self.hit_bottom.get_rect()
+		self.hit_top = engine.get_image('weapon/hit_top.png', self._width , self._height).convert_alpha()
 		self.hit_top_rect = self.hit_top.get_rect()
 		self.is_attacking = False
 		self.attack_frame = 0
 		self.attack_animation = None
 	def spawn_hit_right(self,screen):
-		self.hit_right_rect.topleft = (self.player.rect.x + 150, self.player.rect.y + 5)
-		self.player.attack_rect = self.hit_right_rect
+		self.hit_right = pg.transform.scale(self.hit_right, (int(self._width * 1.2),int(self._height * 2.5)))
+		self.hit_right_rect.topleft = (self._player.rect.x + (self._width * 1.4), self._player.rect.y + (self._height * 2.5) / 10)
+		self._player.attack_rect = self.hit_right_rect
 		self.is_attacking = True
 		self.attack_animation = 'right'
-		#self.attack_frame = 0
 		return screen.blit(self.hit_right, self.hit_right_rect)
 	def spawn_hit_left(self,screen):
-		self.hit_left_rect.topleft = (self.player.rect.x - 90, self.player.rect.y - 5)
-		self.player.attack_rect = self.hit_left_rect
+		self.hit_left = pg.transform.scale(self.hit_left, (int(self._width * 1.2),int(self._height * 2.5)))
+		self.hit_left_rect.topleft = (self._player.rect.x - (self._width * 1.4), self._player.rect.y - (self._height * 2.5) / 10)
+		self._player.attack_rect = self.hit_left_rect
 		self.is_attacking = True
 		self.attack_animation = 'left'
-		#self.attack_frame = 0
 		return screen.blit(self.hit_left,  self.hit_left_rect)
 	def spawn_hit_top(self,screen):
-		self.hit_top_rect.topleft = (self.player.rect.x + 30, self.player.rect.y - 90)
-		self.player.attack_rect = self.hit_top_rect
+		self.hit_top = pg.transform.scale(self.hit_top, (int(self._width * 1.2),int(self._height * 2.5)))
+		self.hit_top_rect.topleft = (self._player.rect.x + (self._height * 2.5) / 10 , self._player.rect.y - (self._width * 1.1))
+		self._player.attack_rect = self.hit_top_rect
 		self.is_attacking = True
 		self.attack_animation = 'top'
-		#self.attack_frame = 0
 		return screen.blit(self.hit_top,self.hit_top_rect)
 	def spawn_hit_bottom(self,screen):
-		self.hit_bottom_rect.topleft = (self.player.rect.x + 20, self.player.rect.y + 110)
-		self.player.attack_rect = self.hit_bottom_rect
+		self.hit_bottom = pg.transform.scale(self.hit_bottom, (int(self._width * 1.2),int(self._height * 2.5)))
+		self.hit_bottom_rect.topleft = (self._player.rect.x - (self._height * 2.7) / 10 , self._player.rect.y + (self._width * 1.1))
+		self._player.attack_rect = self.hit_bottom_rect
 		self.is_attacking = True
 		self.attack_animation = 'bottom'
-		#self.attack_frame = 0
 		return screen.blit(self.hit_bottom, self.hit_bottom_rect)
 
 class Fists(MeleeWeapon):
 	def __init__(self,player):
-		super().__init__(player,width=40,height=40,damage=10)
+		super().__init__(player,width=95,height=30,damage=10, filename=None)
+		#self.model = pg.Surface((40, 40), pg.SRCALPHA)
+		#self.rect = self.model.get_rect(center=(player.x, player.y))
+
+class Bat(MeleeWeapon):
+	def __init__(self,player):
+		super().__init__(player, filename='weapon/bat/bat.png', width=130,height=40,damage=30)
 
 
+class Particle(pg.Rect):
+	def __init__(self, location):
+		self.width = 4
+		self.height = 4
+		self.center = location
+	def update(self):
+		self.centery -= 3
+		self.centerx += r.randint(-2,2)
+
+class SpawnerParticle(Particle):
+	def __init__(self):
+		self.particles = []
+	def spawn(self,amount, location,type,screen):
+		if type == "blood":
+			self.color = [(247,8,17),(247,24,8),(247,8,17), (164,12,18), (135,9,10)]
+		for i in range(amount):
+			self.particles.append(Particle(location))
+	def update(self,screen):
+		for x in self.particles:
+			x.update()
+			if x.centery<0:
+				self.particles.remove(x)
+			else:
+				pg.draw.rect(screen, self.color[r.randint(0,4)], x)
 
 
 class Game:
 	def __init__(self):
-		# Font #
 	
-		
 		#Engine Init
 		self.screen = pg.display.set_mode((1020,640))
 		self.interface = Interface(0,0,0,0)
@@ -292,14 +350,14 @@ class Game:
 		self.done = False
 		pg.mouse.set_cursor(pg.SYSTEM_CURSOR_CROSSHAIR)
 		self.time_delta = self.clock.tick(60)/1000.0
-
+		self.particles = SpawnerParticle()
 		# Object
 		self.player = Player(100,100)
 
 		self.objects = []
 		self.collide_objects = []
 		self.pigs = []
-
+		self.bat = Bat(self.player)
 		self.background = engine.get_image('grass.png', 1024,640)
 		self.hp_text = self.interface.create_text(f'HP:{self.player.hp}','arial',60,(0,0,0))
 		engine.play_music('music/ambient1.mp3', -1)
@@ -315,17 +373,17 @@ class Game:
 				if event.type == pg.MOUSEBUTTONDOWN:
 					if event.button == 1:
 						if pg.mouse.get_pos()[0] < self.player.rect.x and pg.mouse.get_pos()[1]> self.player.rect.y:
-							self.player.fists.spawn_hit_left(self.screen)
-							engine.play_sound('hits/hit.mp3')
+							self.player.weapon.spawn_hit_left(self.screen)
+							engine.play_sound('weapon/hit.mp3')
 						elif pg.mouse.get_pos()[0] > self.player.rect.x and pg.mouse.get_pos()[1]> self.player.rect.y and pg.mouse.get_pos()[0]>pg.mouse.get_pos()[1]:
-							self.player.fists.spawn_hit_right(self.screen)
-							engine.play_sound('hits/hit.mp3')
+							self.player.weapon.spawn_hit_right(self.screen)
+							engine.play_sound('weapon/hit.mp3')
 						elif pg.mouse.get_pos()[1] < self.player.rect.y and pg.mouse.get_pos()[0] > self.player.rect.x:
-							self.player.fists.spawn_hit_top(self.screen)
-							engine.play_sound('hits/hit.mp3')
+							self.player.weapon.spawn_hit_top(self.screen)
+							engine.play_sound('weapon/hit.mp3')
 						elif pg.mouse.get_pos()[1] > self.player.rect.y and pg.mouse.get_pos()[0] > self.player.rect.x:
-							self.player.fists.spawn_hit_bottom(self.screen)
-							engine.play_sound('hits/hit.mp3')
+							self.player.weapon.spawn_hit_bottom(self.screen)
+							engine.play_sound('weapon/hit.mp3')
 			except AttributeError:
 				pass
 			if event.type == pg.KEYDOWN:
@@ -334,8 +392,13 @@ class Game:
 					print('x')
 				if event.key == pg.K_f:
 					self.collide_objects.append(Object(pg.mouse.get_pos()[0],pg.mouse.get_pos()[1],(f'object/trees/tree{r.randint(1,6)}.png'), 200,300))
-				if event.key == pg.K_i:
-					self.player.fists = self.player.inventory.choose_weapon(0, None)
+
+				if event.key == pg.K_0:
+					self.player.weapon = self.player.inventory.choose_weapon(0, None)
+					self.particles.spawn(100, (100,500), 'blood', self.screen)
+					
+				if event.key == pg.K_1:
+					self.player.weapon = self.player.inventory.choose_weapon(1, None)
 
 
 
@@ -349,16 +412,17 @@ class Game:
 						engine.play_sound(f'pig/pig_idle{r.randint(1,3)}.ogg')
 						self.timer = 0
 	def update(self):
+		self.player.update_weapon_position()
 		# Sprite melee attack
 		try:	
-			if self.player.fists.is_attacking == True:
-				self.player.fists.attack_frame += 1
-				if self.player.fists.attack_frame >= 1:
+			if self.player.weapon.is_attacking == True:
+				self.player.weapon.attack_frame += 1
+				if self.player.weapon.attack_frame >= 1:
 					self.player.attack_rect = None
-				if self.player.fists.attack_frame >= 5:
-					self.player.fists.is_attacking = False
-					self.player.fists.attack_animation = None
-					self.player.fists.attack_frame = 0
+				if self.player.weapon.attack_frame >= 5:
+					self.player.weapon.is_attacking = False
+					self.player.weapon.attack_animation = None
+					self.player.weapon.attack_frame = 0
 		except AttributeError:
 			pass
 		# Input
@@ -401,10 +465,9 @@ class Game:
 			# Melee attack and pig
 			try:
 				for _pig in self.pigs:
-					if self.player.attack_rect.colliderect(_pig.rect) and self.player.fists.is_attacking == True:
-						_pig.hp -= self.player.fists._damage
-						print('d')
-						engine.play_sound('hits/direct_hit.mp3')
+					if self.player.attack_rect.colliderect(_pig.rect) and self.player.weapon.is_attacking == True:
+						_pig.hp -= self.player.weapon._damage
+						engine.play_sound('weapon/hands/sound/direct_hit.mp3')
 						engine.play_sound(f'pig/pig_idle{r.randint(1,3)}.ogg')
 			except:
 				pass
@@ -420,21 +483,23 @@ class Game:
 		for _pig in self.pigs:
 			_pig.spawn_model(self.screen)
 		self.player.spawn_model(self.screen)
-
+		
+		self.particles.update(self.screen)
 		# Render attack animation
 		try:
-			if self.player.fists.is_attacking == True:
-				if self.player.fists.attack_animation == "right":
-					self.player.fists.spawn_hit_right(self.screen)
+			if self.player.weapon.is_attacking == True:
+
+				if self.player.weapon.attack_animation == "right":
+					self.player.weapon.spawn_hit_right(self.screen)
 					self.player.attack_rect = None
-				elif self.player.fists.attack_animation == "left":
-					self.player.fists.spawn_hit_left(self.screen)
+				elif self.player.weapon.attack_animation == "left":
+					self.player.weapon.spawn_hit_left(self.screen)
 					self.player.attack_rect = None
-				elif self.player.fists.attack_animation == "top":
-					self.player.fists.spawn_hit_top(self.screen)
+				elif self.player.weapon.attack_animation == "top":
+					self.player.weapon.spawn_hit_top(self.screen)
 					self.player.attack_rect = None
-				elif self.player.fists.attack_animation == "bottom":
-					self.player.fists.spawn_hit_bottom(self.screen)
+				elif self.player.weapon.attack_animation == "bottom":
+					self.player.weapon.spawn_hit_bottom(self.screen)
 					self.player.attack_rect = None
 		except AttributeError:
 			pass
@@ -451,7 +516,7 @@ class Game:
 			self.update()
 			self.render()
 			self.clock.tick(60)
-			print( self.pigs,self.collide_objects, self.player.inventory.inv, self.player.fists)
+			print( self.pigs,self.collide_objects, self.player.inventory.inv, self.player.weapon)
 
 if __name__ == "__main__":
 	game = Game()
