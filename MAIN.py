@@ -1,0 +1,202 @@
+import numpy as np
+import pygame as pg
+#import pygame_gui as pgg
+from pygame.locals import *
+import os
+import random as r
+import time as t
+from WEAPON import *
+from PLAYER import *
+from NPC import *
+from ENGINE import *
+from PARTICLE import *
+import numpy as np
+
+pg.init()
+pg.font.init()
+pg.display.set_caption('слышишь выскачем')
+
+
+timing = t.time()
+
+FLAG = False
+
+def timer(seconds, flag):
+	global timing
+	while t.time() - timing > seconds:
+		timing = t.time()
+		print(f'{seconds} sec')
+		return 0
+
+
+
+
+
+engine = EngineFunc()
+
+
+class Game:
+	def __init__(self):
+	
+		#Engine Init
+		self.screen = pg.display.set_mode((1020,640))
+		self.interface = Interface(0,0,0,0)
+		self.clock = pg.time.Clock()
+		self.timer = 0
+		pg.time.set_timer(pg.USEREVENT, 100, False)
+		self.start_ticks=pg.time.get_ticks()
+		self.done = False
+		pg.mouse.set_cursor(pg.SYSTEM_CURSOR_CROSSHAIR)
+		self.time_delta = self.clock.tick(60)/1000.0
+		self.particles = SpawnerParticle()
+		# Object
+		self.player = Player(100,100)
+
+		self.objects = []
+		self.collide_objects = []
+		self.pigs = []
+		self.bat = Bat(self.player)
+		self.background = engine.get_image('materials/map/grass.png', 1024,640)
+		self.hp_text = self.interface.create_text(f'HP:{self.player.hp}','arial',60,(0,0,0))
+		engine.play_music('materials/music/ambient1.mp3', -1)
+	def handle_events(self):
+
+		for event in pg.event.get():
+			###
+
+			if event.type == pg.QUIT:
+				self.done = True
+			# Keys
+			self.player.keys(event,self.screen)
+
+			#Other keys
+			if event.type == pg.KEYDOWN:
+				if event.key == pg.K_x:
+					self.pigs.append(Pig(pg.mouse.get_pos()[0], pg.mouse.get_pos()[1]))
+					print('x')
+				if event.key == pg.K_f:
+					self.collide_objects.append(Object(pg.mouse.get_pos()[0],pg.mouse.get_pos()[1],(f'materials/map/object/trees/tree{r.randint(1,6)}.png'), 200,300))
+
+
+
+			#Ai pig
+			for _pig in self.pigs:
+				if event.type == pg.USEREVENT:
+					self.timer += 1
+					if self.timer > 10:
+						_pig.move_idle()
+					if self.timer > 40:
+						engine.play_sound(f'materials/npc/pig/sound/pig_idle{r.randint(1,3)}.ogg')
+						self.timer = 0
+	def update(self):
+		self.player.update_weapon_position()
+		# Sprite melee attack
+		try:	
+			if self.player.weapon.is_attacking == True:
+				self.player.weapon.attack_frame += 1
+				if self.player.weapon.attack_frame >= 1:
+					self.player.attack_rect = None
+				if self.player.weapon.attack_frame >= 5:
+					self.player.weapon.is_attacking = False
+					self.player.weapon.attack_animation = None
+					self.player.weapon.attack_frame = 0
+		except AttributeError:
+			pass
+		# Input
+		pressed = pg.key.get_pressed()
+		self.player.movement(pressed)
+
+		# Death Logic
+		for _pig in self.pigs:
+			if _pig.hp <= 0:
+				engine.play_sound('materials/npc/pig/sound/death.mp3')
+				self.pigs.remove(_pig)
+				del _pig
+					
+	def collusion(self):
+			# Pig and Player
+			try:
+				for _pig in self.pigs:
+					if self.player.rect.colliderect(_pig.rect):
+						self.player.hp -= 1
+			except:
+				pass
+			# Object collide
+			for _obj in self.collide_objects:
+				if self.player.rect.colliderect(_obj.rect):
+					if _obj.rect.x >= self.player.rect.x:
+						self.player.rect.x -= self.player.speed
+					elif _obj.rect.y <= self.player.rect.y:
+						self.player.rect.y += self.player.speed
+					elif _obj.rect.y >= self.player.rect.y:
+						self.player.rect.y -= self.player.speed
+					elif _obj.rect.x >= self.player.rect.x:
+						self.player.rect.x += self.player.speed
+			# Melee attack and pig
+			try:
+				for _pig in self.pigs:
+					if self.player.attack_rect.colliderect(_pig.rect) and self.player.weapon.is_attacking == True:
+						_pig.hp -= self.player.weapon._damage
+						engine.play_sound('materials/weapon/melee/hands/sound/direct_hit.mp3')
+						engine.play_sound(f'materials/npc/pig/sound/pig_idle{r.randint(1,3)}.ogg')
+			except:
+				pass
+	def render(self):
+		# Background
+		self.screen.blit(self.background, (0,0))
+		
+		# Object
+		if self.collide_objects:
+			for _obj in self.collide_objects:
+				_obj.spawn_model(self.screen)
+		# Character
+		for _pig in self.pigs:
+			_pig.spawn_model(self.screen)
+		self.player.spawn_model(self.screen)
+		
+		self.particles.update(self.screen)
+		# Render attack animation
+		try:
+			if self.player.weapon.is_attacking == True:
+
+				if self.player.weapon.attack_animation == "right":
+					self.player.weapon.spawn_hit(self.screen, 'right')
+					self.player.attack_rect = None
+				elif self.player.weapon.attack_animation == "left":
+					self.player.weapon.spawn_hit(self.screen, 'left')
+					self.player.attack_rect = None
+				elif self.player.weapon.attack_animation == "top":
+					self.player.weapon.spawn_hit(self.screen, 'top')
+					self.player.attack_rect = None
+				elif self.player.weapon.attack_animation == "bottom":
+					self.player.weapon.spawn_hit(self.screen, 'bottom')
+					self.player.attack_rect = None
+		except AttributeError:
+			pass
+		# HUD
+		self.hp_text = self.interface.create_text(f'HP:{self.player.hp}','arial',60,(0,0,0))
+		self.screen.blit(self.hp_text, (10,10))
+		pg.draw.line(self.screen, (0,0,0), self.player.rect.center, pg.mouse.get_pos())
+		
+		#print(engine.length_of_vector(mouse_pos), engine.length_of_vector(self.player.rect.center))
+		#print(engine.normalize_vector(mouse_pos))
+		
+		# Update Display
+		pg.display.flip()
+
+	def run(self):
+		while not self.done:
+			self.handle_events()
+			self.collusion()			
+			self.update()
+			self.render()
+			self.clock.tick(60)
+			mouse_pos = pg.mouse.get_pos()
+			print(engine.angle_between_vectors(np.array(self.player.rect.center), np.array(mouse_pos)))
+			#print(self.player.rect.center, mouse_pos)
+			print(engine.check_angle(self.player.rect.center, mouse_pos))
+
+if __name__ == "__main__":
+	game = Game()
+	game.run()
+	pg.quit()
