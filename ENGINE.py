@@ -115,3 +115,21 @@ class Object(pg.sprite.Sprite):
 	@height.setter
 	def width(self, height):
 		self._height = height
+
+class Collisions:
+	def collision_between_physical_object(self,objs1, objs2):
+		for _obj, _obj1 in zip(objs1,objs2):
+			if _obj.rect.colliderect(_obj1.rect):
+					if _obj.rect.x >= _obj1.rect.x:
+						_obj.rect.x -= _obj.speed
+					elif _obj.rect.y <= _obj1.rect.y:
+						_obj.rect.y += _obj.speed
+					elif _obj.rect.y >= _obj1.rect.y:
+						_obj.rect.y -= _obj.speed
+					elif _obj.rect.x >= _obj1.rect.x:
+						_obj.rect.x += _obj.speed
+		
+	def collusion_between_enemies(self, enemy, sacrifice):
+		for _enemy,_sacrifice in zip(enemy,sacrifice):
+			if _enemy.rect.colliderect(_sacrifice.rect):
+				_sacrifice.hp -= _enemy.damage

@@ -1,7 +1,7 @@
 import pygame as pg
 import random as r
 from pygame.locals import *
-from ENGINE import EngineFunc
+from ENGINE import EngineFunc, Object
 import math
 import numpy as np
 
@@ -14,7 +14,7 @@ class NPC(pg.sprite.Sprite):
 		self._y = np.int32(y)
 		self._hp = np.int16(hp)
 		self._speed = np.int32(speed)
-		self._damage = np.int32(damage)
+		self._damage = np.int16(damage)
 		
 		self._width = np.int32(width)
 		self._height = np.int32(height)
@@ -58,6 +58,9 @@ class NPC(pg.sprite.Sprite):
 	@hp.setter
 	def hp(self,hp):
 		self._hp = hp
+	@property
+	def damage(self):
+		return self._damage
 	
 
 
@@ -66,7 +69,7 @@ class NPC(pg.sprite.Sprite):
 
 class Pig(NPC):
 	def __init__(self,x,y):
-		super().__init__(x,y,hp=40, speed=4, damage=10, filename="materials/npc/pig/pig.png", width=100, height=100, name='pig')
+		super().__init__(x,y,hp=40, speed=4, damage=1, filename="materials/npc/pig/pig.png", width=100, height=100, name='pig')
 	def move_idle(self):
 		moves = [(0, 1), (0, -1), (1, 0), (-1, 0)]
 		step = moves[r.randint(0, 3)]

@@ -10,6 +10,7 @@ from PLAYER import *
 from NPC import *
 from ENGINE import *
 from PARTICLE import *
+from ANIMATION import *
 import numpy as np
 
 pg.init()
@@ -49,6 +50,8 @@ class Game:
 		pg.mouse.set_cursor(pg.SYSTEM_CURSOR_CROSSHAIR)
 		self.time_delta = self.clock.tick(60)/1000.0
 		self.particles = SpawnerParticle()
+		self.system_of_collusions = Collisions()
+		self.animations = Animation()
 		# Object
 		self.player = Player(100,100)
 
@@ -59,6 +62,7 @@ class Game:
 		self.background = engine.get_image('materials/map/grass.png', 1024,640)
 		self.hp_text = self.interface.create_text(f'HP:{self.player.hp}','arial',60,(0,0,0))
 		engine.play_music('materials/music/ambient1.mp3', -1)
+
 	def handle_events(self):
 
 		for event in pg.event.get():
@@ -76,7 +80,7 @@ class Game:
 					print('x')
 				if event.key == pg.K_f:
 					self.collide_objects.append(Object(pg.mouse.get_pos()[0],pg.mouse.get_pos()[1],(f'materials/map/object/trees/tree{r.randint(1,6)}.png'), 200,300))
-
+					self.animations.run_animation([pg.draw.circle(self.screen,(0,0,0),(20,20),30),pg.draw.circle(self.screen,(10,20,30),(20,20),30),pg.draw.circle(self.screen,(30,40,50),(20,20),30)], 3000, (200,200), self.screen)
 
 
 			#Ai pig
@@ -115,23 +119,9 @@ class Game:
 					
 	def collusion(self):
 			# Pig and Player
-			try:
-				for _pig in self.pigs:
-					if self.player.rect.colliderect(_pig.rect):
-						self.player.hp -= 1
-			except:
-				pass
+			self.system_of_collusions.collusion_between_enemies(self.pigs, [self.player])
 			# Object collide
-			for _obj in self.collide_objects:
-				if self.player.rect.colliderect(_obj.rect):
-					if _obj.rect.x >= self.player.rect.x:
-						self.player.rect.x -= self.player.speed
-					elif _obj.rect.y <= self.player.rect.y:
-						self.player.rect.y += self.player.speed
-					elif _obj.rect.y >= self.player.rect.y:
-						self.player.rect.y -= self.player.speed
-					elif _obj.rect.x >= self.player.rect.x:
-						self.player.rect.x += self.player.speed
+			self.system_of_collusions.collision_between_physical_object([self.player], self.collide_objects)
 			# Melee attack and pig
 			try:
 				for _pig in self.pigs:
@@ -178,8 +168,6 @@ class Game:
 		self.screen.blit(self.hp_text, (10,10))
 		pg.draw.line(self.screen, (0,0,0), self.player.rect.center, pg.mouse.get_pos())
 		
-		#print(engine.length_of_vector(mouse_pos), engine.length_of_vector(self.player.rect.center))
-		#print(engine.normalize_vector(mouse_pos))
 		
 		# Update Display
 		pg.display.flip()
@@ -193,7 +181,6 @@ class Game:
 			self.clock.tick(60)
 			mouse_pos = pg.mouse.get_pos()
 			print(engine.angle_between_vectors(np.array(self.player.rect.center), np.array(mouse_pos)))
-			#print(self.player.rect.center, mouse_pos)
 			print(engine.check_angle(self.player.rect.center, mouse_pos))
 
 if __name__ == "__main__":
