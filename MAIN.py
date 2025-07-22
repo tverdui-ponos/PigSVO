@@ -16,6 +16,7 @@ import numpy as np
 pg.init()
 pg.font.init()
 pg.display.set_caption('слышишь выскачем')
+#pygame.display.set_icon(pygame.image.load("app.bmp"))
 
 
 timing = t.time()
@@ -77,10 +78,9 @@ class Game:
 			if event.type == pg.KEYDOWN:
 				if event.key == pg.K_x:
 					self.pigs.append(Pig(pg.mouse.get_pos()[0], pg.mouse.get_pos()[1]))
-					print('x')
 				if event.key == pg.K_f:
-					self.collide_objects.append(Object(pg.mouse.get_pos()[0],pg.mouse.get_pos()[1],(f'materials/map/object/trees/tree{r.randint(1,6)}.png'), 200,300))
-					self.animations.run_animation([pg.draw.circle(self.screen,(0,0,0),(20,20),30),pg.draw.circle(self.screen,(10,20,30),(20,20),30),pg.draw.circle(self.screen,(30,40,50),(20,20),30)], 3000, (200,200), self.screen)
+					#self.collide_objects.append(Object(pg.mouse.get_pos()[0],pg.mouse.get_pos()[1],(f'materials/map/object/trees/tree{r.randint(1,6)}.png'), 200,300))
+					self.animations.run_animation([engine.get_image('materials/player/serega.png', 100,100)], 3000, (200,200), self.screen)
 
 
 			#Ai pig
@@ -135,6 +135,7 @@ class Game:
 		# Background
 		self.screen.blit(self.background, (0,0))
 		
+		
 		# Object
 		if self.collide_objects:
 			for _obj in self.collide_objects:
@@ -180,8 +181,6 @@ class Game:
 			self.render()
 			self.clock.tick(60)
 			mouse_pos = pg.mouse.get_pos()
-			print(engine.angle_between_vectors(np.array(self.player.rect.center), np.array(mouse_pos)))
-			print(engine.check_angle(self.player.rect.center, mouse_pos))
 
 if __name__ == "__main__":
 	game = Game()
