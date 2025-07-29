@@ -1,18 +1,15 @@
 import pygame as pg
 import random as r
 from pygame.locals import *
-from ENGINE import EngineFunc, Object
+from ENGINE import EngineFunc, Object, Entity
 import math
 import numpy as np
 
 engine = EngineFunc()
 
-class NPC(pg.sprite.Sprite):
-	def __init__(self, x,y,hp,speed,damage,filename,width,height,name):
-		pg.sprite.Sprite.__init__(self)
-		self._x = np.int32(x)
-		self._y = np.int32(y)
-		self._hp = np.int16(hp)
+class NPC(Entity):
+	def __init__(self, x,y,hp,speed,damage,filename,width,height,name, groups):
+		super().__init__(x=x,y=y,filename=filename,width=width,height=height,hp=hp, groups=groups)
 		self._speed = np.int32(speed)
 		self._damage = np.int16(damage)
 		
@@ -76,5 +73,4 @@ class Pig(NPC):
 		self.rect.x += step[0] * self._speed
 		self.rect.y += step[1] * self._speed
 	def __del__(self):
-		print('dead')
 		engine.play_sound('materials/npc/pig/sound/death.mp3')

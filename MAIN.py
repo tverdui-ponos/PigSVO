@@ -11,6 +11,7 @@ from NPC import *
 from ENGINE import *
 from PARTICLE import *
 from ANIMATION import *
+from MAP import Map
 import numpy as np
 
 pg.init()
@@ -41,10 +42,11 @@ class Game:
 	def __init__(self):
 	
 		#Engine Init
-		self.screen = pg.display.set_mode((1020,640))
+		self.screen = pg.display.set_mode((1024,768))
 		self.interface = Interface(0,0,0,0)
 		self.clock = pg.time.Clock()
 		self.timer = 0
+		#self.camera = Camera(200,400)
 		pg.time.set_timer(pg.USEREVENT, 100, False)
 		self.start_ticks=pg.time.get_ticks()
 		self.done = False
@@ -54,9 +56,11 @@ class Game:
 		self.system_of_collusions = Collisions()
 		self.animations = Animation()
 		# Object
-		self.player = Player(100,100)
-
 		self.objects = []
+		self.player = Player(100,100)
+		
+		
+		self.phisical_objects = []
 		self.collide_objects = []
 		self.pigs = []
 		self.bat = Bat(self.player)
@@ -64,12 +68,17 @@ class Game:
 		self.hp_text = self.interface.create_text(f'HP:{self.player.hp}','arial',60,(0,0,0))
 		engine.play_music('materials/music/ambient1.mp3', -1)
 
+		self.objects.append(self.player)
+		self.map = Map('testmap')
+		#self.objects.append(self.background)
+
 	def handle_events(self):
 
 		for event in pg.event.get():
 			###
 
-			if event.type == pg.QUIT:
+			if event.type == pg.QUIT:					
+
 				self.done = True
 			# Keys
 			self.player.keys(event,self.screen)
@@ -77,7 +86,9 @@ class Game:
 			#Other keys
 			if event.type == pg.KEYDOWN:
 				if event.key == pg.K_x:
-					self.pigs.append(Pig(pg.mouse.get_pos()[0], pg.mouse.get_pos()[1]))
+					pig = Pig(pg.mouse.get_pos()[0], pg.mouse.get_pos()[1])
+					self.pigs.append(pig)
+					self.objects.append(pig)
 				if event.key == pg.K_f:
 					#self.collide_objects.append(Object(pg.mouse.get_pos()[0],pg.mouse.get_pos()[1],(f'materials/map/object/trees/tree{r.randint(1,6)}.png'), 200,300))
 					self.animations.run_animation([engine.get_image('materials/player/serega.png', 100,100)], 3000, (200,200), self.screen)
@@ -93,7 +104,7 @@ class Game:
 						engine.play_sound(f'materials/npc/pig/sound/pig_idle{r.randint(1,3)}.ogg')
 						self.timer = 0
 	def update(self):
-		self.player.update_weapon_position()
+		#self.player.update_weapon_position()
 		# Sprite melee attack
 		try:	
 			if self.player.weapon.is_attacking == True:
@@ -116,6 +127,9 @@ class Game:
 				engine.play_sound('materials/npc/pig/sound/death.mp3')
 				self.pigs.remove(_pig)
 				del _pig
+		
+		self.camera.update(self.player)
+		print(self.camera.camera.topleft)
 					
 	def collusion(self):
 			# Pig and Player
@@ -133,17 +147,26 @@ class Game:
 				pass
 	def render(self):
 		# Background
-		self.screen.blit(self.background, (0,0))
+		#self.screen.blit(self.background, (0,0))
 		
+		#self.screen.fill((10,20,30))
+		
+		self.map.run()
 		
 		# Object
 		if self.collide_objects:
 			for _obj in self.collide_objects:
 				_obj.spawn_model(self.screen)
+
 		# Character
 		for _pig in self.pigs:
 			_pig.spawn_model(self.screen)
+		
+
 		self.player.spawn_model(self.screen)
+		
+		#for i in self.objects:
+			#self.camera.apply(i)
 		
 		self.particles.update(self.screen)
 		# Render attack animation
@@ -180,7 +203,7 @@ class Game:
 			self.update()
 			self.render()
 			self.clock.tick(60)
-			mouse_pos = pg.mouse.get_pos()
+			#mouse_pos = pg.mouse.get_pos()
 
 if __name__ == "__main__":
 	game = Game()

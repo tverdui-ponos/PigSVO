@@ -2,6 +2,7 @@ import pygame as pg
 import numpy as np
 from ENGINE import Object
 import time as t
+import pygame.camera
 
 class Animation:
 	def __init__(self):
@@ -25,10 +26,11 @@ class Animation:
 	def update(self, screen):
 		now = pg.time.get_ticks()
 		difference = now - self.last_update
+		frame_index = min(int((elapsed / duration) * len(animation_frames)), len(animation_frames) - 1)
 		if difference > self.frame_rate:
 			self.last_update = now
-			for i in self._pull_animation:
-				pass
+			for i,v in self._pull_animation:
+				v -= difference 
 
 	def run_animation(self,animation_frames, duration, position, screen):
 		# Init for work

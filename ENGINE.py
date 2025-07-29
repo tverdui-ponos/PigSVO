@@ -89,9 +89,8 @@ class EngineFunc:
 engine = EngineFunc()
 
 class Object(pg.sprite.Sprite):
-	def __init__(self,x,y,filename,width,height):
-		pg.sprite.Sprite.__init__(self)
-
+	def __init__(self,x,y,filename,width,height, groups):
+		pg.sprite.Sprite.__init__(self, groups)
 		self._x = np.int32(x)
 		self._y = np.int32(y)
 		self._width = np.int32(width)
@@ -99,10 +98,14 @@ class Object(pg.sprite.Sprite):
 		if filename != None:
 			self.model = engine.get_image(filename, self._width, self._height).convert_alpha()
 			self.rect = self.model.get_rect(center=(self._x, self._y))
-	def spawn_model(self,screen):
-		return screen.blit(self.model, self.rect)
-	def __getattr__(self, atr):
-		return atr
+	'''def spawn_model(self,screen):
+		return screen.blit(self.model, self.rect)'''
+	@property
+	def x(self):
+		return self._x
+	@property
+	def y(self):
+		return self._y
 	@property
 	def width(self):
 		return self._width
@@ -115,6 +118,30 @@ class Object(pg.sprite.Sprite):
 	@height.setter
 	def width(self, height):
 		self._height = height
+
+class Entity(Object):
+	def __init__(self, x, y, filename, width,height,groups,hp):
+		super().__init__(x,y,filename,width,height, groups)
+		self._hp = np.int16(hp)
+	@property
+	def hp(self):
+		return self._hp
+	@hp.setter
+	def hp(self, hp):
+		self._hp = hp
+	@property
+	def x(self):
+		return self._x
+	@x.setter
+	def x(self, x):
+		self._x = x
+	@property
+	def y(self):
+		return self._y
+	@y.setter
+	def y(self, y):
+		self._y = y
+
 
 class Collisions:
 	def collision_between_physical_object(self,objs1, objs2):
@@ -133,3 +160,22 @@ class Collisions:
 		for _enemy,_sacrifice in zip(enemy,sacrifice):
 			if _enemy.rect.colliderect(_sacrifice.rect):
 				_sacrifice.hp -= _enemy.damage
+
+
+class Camera:
+	def __init__(self,width,height):
+		self.camera = pg.Rect(0,0, width,height)
+		self._width = width
+		self._height = height
+	
+	def apply(self,entity):
+		entity.rect.move(self.camera.topleft)
+	
+	def update(self,target):
+		x = -target.rect.centerx + int(self._width / 2)
+		y = -target.rect.centery + int(self._height / 2)
+
+		x = min(0, x)
+		y = min(0, y)
+
+		self.camera = pg.Rect(x, y, self._width, self._height)
