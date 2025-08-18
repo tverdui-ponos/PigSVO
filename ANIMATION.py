@@ -1,53 +1,53 @@
 import pygame as pg
 import numpy as np
-from ENGINE import Object
 import time as t
-import pygame.camera
 
-class Animation:
-	def __init__(self):
-		'''super().__init__(filename=filename, width=width, height=height)
-		self._x = x
-		self._y = y
-		self._width = width
-		self._height = height
-		 = []'''
-		self.last_update = pg.time.get_ticks()
-		self.frame_rate = 10
-		self._pull_animation = [[], []]
-	def add_animation(self,animation_frames,duration,position):
-		frames = len(animation_frames)
-		start_time = pg.time.get_ticks()
-		animation = (animation_frames,frames,position)
-		self._pull_animation.append(animation, duration)
-		delta = clock.tick(60) / 1000.0
-		current_time = pg.time.get_ticks() / 1000.0
+from ENGINE import EngineFunc
+
+
+engine = EngineFunc()
+
+
+
+class Animation(pg.sprite.Sprite):
+	def __init__(self, animation_frames, pos, groups, duration=5):
+		super().__init__(groups)
+		self._animation_frames = sum([[x] * duration for x in animation_frames], [])
+		self.image = self._animation_frames[0]
+		self.rect = self.image.get_rect(center=pos)
+	def update(self):
+		if len(self._animation_frames) > 0:
+			for i in self._animation_frames:
+				self.image = i
+				self._animation_frames.remove(i)
+				break
+		else:
+			self.kill()
+
+class MeleeHit(Animation):
+	def __init__(self, pos, groups, angle,player, npcs):
+		super().__init__(animation_frames=[engine.get_image('materials/weapon/melee/hit_right.png', 100,100)], pos=pos, groups=groups, duration=1)
+		for i, image in enumerate(self._animation_frames):
+			self._animation_frames[i] = pg.transform.rotate(image, angle)
+		self._player = player
+		self._npcs = npcs
 	
-	def update(self, screen):
-		now = pg.time.get_ticks()
-		difference = now - self.last_update
-		frame_index = min(int((elapsed / duration) * len(animation_frames)), len(animation_frames) - 1)
-		if difference > self.frame_rate:
-			self.last_update = now
-			for i,v in self._pull_animation:
-				v -= difference 
-
-	def run_animation(self,animation_frames, duration, position, screen):
-		# Init for work
-		clock = pg.time.Clock()
-		start_time = pg.time.get_ticks() / 1000.0  # в секундах
-		running = True
-
-		# Animation Loop
-		while running:
-
-			elapsed = current_time - start_time
-			if elapsed >= duration:
-				running = False
-			frame_index = min(int((elapsed / duration) * len(animation_frames)), len(animation_frames) - 1)
-			current_frame = animation_frames[frame_index]
-			screen.blit(current_frame, position)
-
+	def update(self):
+		if len(self._animation_frames) > 0:
+			for i in self._animation_frames:
+				self.image = i
+				self._animation_frames.remove(i)
+				break
+		else:
+			self.kill()
+				
+		for npc in self._npcs:
+			if self.rect.colliderect(npc.rect):
+				if npc != self._player:
+					npc.hp -= self._player.weapon.damage
+					engine.play_sound('materials/weapon/melee/hands/sound/direct_hit.mp3')
+					break
+				
 
 
 

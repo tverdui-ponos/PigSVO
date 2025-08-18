@@ -1,37 +1,37 @@
 import pygame as pg
-import math
 import numpy as np
 
 
+image_libraly = {}
+sound_library = {}
+music_library = {}
+
 
 class EngineFunc:
-	def __init__(self):
-
-
-		self._image_libraly = {}
-		self._sound_library = {}
-		self._music_library = {}
-
-
-	
 	def get_image(self,path, i_x, i_y):
-		image = self._image_libraly.get(path)
+		image = image_libraly.get(path)
 		try:
 			if image == None:
 				image = pg.image.load(path)
 				image = pg.transform.scale(image, (i_x, i_y))
-				self._image_libraly[path] = image
+				image_libraly[path] = image
 			return image
-		except:
-			print(f'Error loading image {path}')
+		except Exception as ex:
+			print(f'Error loading image {path}', ex)
+			image = image_libraly.get('materials/effects/error.png')
+			if image == None:
+				image = pg.image.load('materials/effects/error.png')
+				image = pg.transform.scale(image, (i_x, i_y))
+				image_libraly[path] = image
+				return image			
 
 	
 	def play_sound(self,path):
-		sound = self._sound_library.get(path)
+		sound = sound_library.get(path)
 		try:
 			if sound == None:
 				sound = pg.mixer.Sound(path)
-				self._sound_library[path] = sound
+				sound_library[path] = sound
 			sound.play()
 		except Exception as e:
 			print(f'Error loading sound {path}, {e}')
@@ -39,9 +39,9 @@ class EngineFunc:
 
 	
 	def play_music(self,path,mode):
-		music = self._music_library.get(path)
+		music = music_library.get(path)
 		music = pg.mixer.music.load(path)
-		self._music_library[path] = music
+		music_library[path] = music
 		pg.mixer.music.play(mode)
 		pg.mixer.music.set_volume(0.1)
 	
@@ -88,94 +88,76 @@ class EngineFunc:
 
 engine = EngineFunc()
 
-class Object(pg.sprite.Sprite):
-	def __init__(self,x,y,filename,width,height, groups):
-		pg.sprite.Sprite.__init__(self, groups)
-		self._x = np.int32(x)
-		self._y = np.int32(y)
-		self._width = np.int32(width)
-		self._height = np.int32(height)
-		if filename != None:
-			self.model = engine.get_image(filename, self._width, self._height).convert_alpha()
-			self.rect = self.model.get_rect(center=(self._x, self._y))
-	'''def spawn_model(self,screen):
-		return screen.blit(self.model, self.rect)'''
-	@property
-	def x(self):
-		return self._x
-	@property
-	def y(self):
-		return self._y
-	@property
-	def width(self):
-		return self._width
-	@property
-	def height(self):
-		return self._height
-	@width.setter
-	def width(self, width):
-		self._width = width
-	@height.setter
-	def width(self, height):
-		self._height = height
-
-class Entity(Object):
-	def __init__(self, x, y, filename, width,height,groups,hp):
-		super().__init__(x,y,filename,width,height, groups)
-		self._hp = np.int16(hp)
-	@property
-	def hp(self):
-		return self._hp
-	@hp.setter
-	def hp(self, hp):
-		self._hp = hp
-	@property
-	def x(self):
-		return self._x
-	@x.setter
-	def x(self, x):
-		self._x = x
-	@property
-	def y(self):
-		return self._y
-	@y.setter
-	def y(self, y):
-		self._y = y
-
-
 class Collisions:
-	def collision_between_physical_object(self,objs1, objs2):
-		for _obj, _obj1 in zip(objs1,objs2):
-			if _obj.rect.colliderect(_obj1.rect):
-					if _obj.rect.x >= _obj1.rect.x:
-						_obj.rect.x -= _obj.speed
-					elif _obj.rect.y <= _obj1.rect.y:
-						_obj.rect.y += _obj.speed
-					elif _obj.rect.y >= _obj1.rect.y:
-						_obj.rect.y -= _obj.speed
-					elif _obj.rect.x >= _obj1.rect.x:
-						_obj.rect.x += _obj.speed
+	def collision_between_physical_objects(self, objects1, objects2):
+		collision = pg.sprite.groupcollide(objects1, objects2, False, False)
+		for sprite1,sprite_list in collision.items():
+			for sprite2 in sprite_list:
+				if sprite1 != sprite2:
+					direction = engine.check_angle(sprite1.rect, sprite2.rect)
+					match direction:
+						case "left":
+							sprite1.rect.x += 1
+						case "right":
+							sprite1.rect.x -= 1
+						case "top":
+							sprite1.rect.y += 1
+						case "bottom":
+							sprite1.rect.y -= 1
+	
+
+	def collison_betweeen_npc_and_static_objects(self, npcs, objects):
+		collision = pg.sprite.groupcollide(npcs, objects, False, False)
+		for sprite1,sprite_list in collision.items():
+			for sprite2 in sprite_list:
+				direction = engine.check_angle(sprite1.rect, sprite2.rect)
+				match direction:
+					case "left":
+						sprite1.rect.x += sprite1.speed
+					case "right":
+						sprite1.rect.x -= sprite1.speed
+					case "top":
+						sprite1.rect.y += sprite1.speed
+					case "bottom":
+						sprite1.rect.y -= sprite1.speed	
 		
+
 	def collusion_between_enemies(self, enemy, sacrifice):
 		for _enemy,_sacrifice in zip(enemy,sacrifice):
 			if _enemy.rect.colliderect(_sacrifice.rect):
 				_sacrifice.hp -= _enemy.damage
 
 
-class Camera:
-	def __init__(self,width,height):
-		self.camera = pg.Rect(0,0, width,height)
-		self._width = width
-		self._height = height
-	
-	def apply(self,entity):
-		entity.rect.move(self.camera.topleft)
-	
-	def update(self,target):
-		x = -target.rect.centerx + int(self._width / 2)
-		y = -target.rect.centery + int(self._height / 2)
+class SortCameraGroup(pg.sprite.Group):
+	def __init__(self):
+		super().__init__()
+		self.display_surface = pg.display.get_surface()
+		self.size = np.array(self.display_surface.get_size()) // 2 
+		self.offset = pg.math.Vector2
+	def custom_draw(self, player, *screen):
+		self.offset = player.rect.center - self.size
+		for sprite in self.sprites():
+			offset_pos = sprite.rect.topleft - self.offset
+			self.display_surface.blit(sprite.image, offset_pos)
 
-		x = min(0, x)
-		y = min(0, y)
 
-		self.camera = pg.Rect(x, y, self._width, self._height)
+
+
+class Inventory:
+	def __init__(self,groups):
+		self._inv = [[],[]]
+		self._visible_sprites = groups[0]
+		self._obstacle_sprites = groups[1]
+	def add_weapon(self,weapon,name):
+		self._inv[0].append(weapon)
+		self._inv[1].append(name)
+	def choose_weapon(self,ind,weapon):
+		if weapon:
+			weapon.kill()
+		engine.play_sound('materials/effects/ammo_pickup.mp3')
+		current_weapon = self._inv[0][ind]
+		if ind < len(self._inv[0]):
+			self._visible_sprites.add(current_weapon)
+			self._obstacle_sprites.add(current_weapon)
+			return current_weapon
+		return None
