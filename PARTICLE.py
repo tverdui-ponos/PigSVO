@@ -10,7 +10,7 @@ class Particle(pg.Rect):
 		self.centery -= 3
 		self.centerx += r.randint(-2,2)
 
-class SpawnerParticle(Particle):
+class SpawnParticle(Particle):
 	def __init__(self):
 		self.particles = []
 	def spawn(self,amount, location,type,screen):

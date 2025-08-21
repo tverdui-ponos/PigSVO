@@ -60,21 +60,12 @@ class EngineFunc:
 		vector2 = np.array(vector2, dtype=float)
 
 		dx = vector2[0] - vector1[0]
-		# Features of pygame (OY)
 		dy = vector1[1] - vector2[1]
 
 		angle = np.arctan2(dy,dx)
-
-		'''normal1 = np.linalg.norm(vector1)
-		normal2 = np.linalg.norm(vector2)
-
-		cos_theta = np.dot(vector1, vector2) / (normal1 * normal2)
-		cos_theta = np.clip(cos_theta, -1.0, 1.0)
-
-		theta_rad = np.arccos(cos_theta)
-
-		return theta_rad'''
 		return np.degrees(angle) % 360
+	
+
 	def check_angle(self, vector1, vector2):
 		angle = self.angle_between_vectors(vector1, vector2)
 		if 0 < angle <= 45 or 338 < angle <= 360:
@@ -84,9 +75,20 @@ class EngineFunc:
 		elif 155 < angle <= 244:
 			return 'left'
 		elif 46 < angle <= 155:
-			return 'top' 
+			return 'top'
+
+	
+	def get_mouse_pos(self, camera_group):
+		
+		mouse_pos = pg.mouse.get_pos()
+		
+		world_mouse_pos = np.array(mouse_pos) + camera_group.offset
+
+		return world_mouse_pos
 
 engine = EngineFunc()
+
+
 
 class Collisions:
 	def collision_between_physical_objects(self, objects1, objects2):
@@ -95,7 +97,9 @@ class Collisions:
 			for sprite2 in sprite_list:
 				if sprite1 != sprite2:
 					direction = engine.check_angle(sprite1.rect, sprite2.rect)
+					
 					match direction:
+						
 						case "left":
 							sprite1.rect.x += 1
 						case "right":
@@ -128,6 +132,7 @@ class Collisions:
 				_sacrifice.hp -= _enemy.damage
 
 
+
 class SortCameraGroup(pg.sprite.Group):
 	def __init__(self):
 		super().__init__()
@@ -143,21 +148,33 @@ class SortCameraGroup(pg.sprite.Group):
 
 
 
+
 class Inventory:
-	def __init__(self,groups):
+	def __init__(self,groups, weapon):
 		self._inv = [[],[]]
 		self._visible_sprites = groups[0]
 		self._obstacle_sprites = groups[1]
+		self.weapon = weapon
+
+
 	def add_weapon(self,weapon,name):
 		self._inv[0].append(weapon)
 		self._inv[1].append(name)
-	def choose_weapon(self,ind,weapon):
-		if weapon:
-			weapon.kill()
-		engine.play_sound('materials/effects/ammo_pickup.mp3')
-		current_weapon = self._inv[0][ind]
-		if ind < len(self._inv[0]):
-			self._visible_sprites.add(current_weapon)
-			self._obstacle_sprites.add(current_weapon)
-			return current_weapon
-		return None
+
+
+	def choose_weapon(self,ind):
+		if ind >= len(self._inv[0]):
+			return None
+		else:
+			if self.weapon:
+				self.weapon.kill()
+			
+			self.weapon = self._inv[0][ind]
+			
+
+			self._visible_sprites.add(self.weapon)
+			self._obstacle_sprites.add(self.weapon)
+
+			engine.play_sound('materials/effects/ammo_pickup.mp3')
+
+			return self.weapon

@@ -73,7 +73,7 @@ class Map():
             case "P":
                 self.player = Player(x,y, (self.visible_sprites, self.physical_sprites, self.obstacle_sprites, self.npcs))
             case "T":
-                return Object(x,y,(f'materials/map/object/trees/tree{r.randint(1,6)}.png'), 200,300, ([self.visible_sprites], [self.physical_sprites]))
+                return Object(x,y,(f'materials/map/object/trees/tree{r.randint(1,6)}.png'), 200,300, (self.visible_sprites, self.physical_sprites))
             case "p":
                 return Pig(x,y, (self.visible_sprites, self.physical_sprites, self.obstacle_sprites, self.npcs))
                 

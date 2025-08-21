@@ -25,14 +25,14 @@ class Object(pg.sprite.Sprite):
 	@property
 	def width(self):
 		return self._width
-	@property
-	def height(self):
-		return self._height
 	@width.setter
 	def width(self, width):
 		self._width = width
+	@property
+	def height(self):
+		return self._height
 	@height.setter
-	def width(self, height):
+	def height(self, height):
 		self._height = height
 
 class Entity(Object):
