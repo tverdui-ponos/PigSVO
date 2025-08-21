@@ -160,6 +160,15 @@ class Inventory:
 	def add_weapon(self,weapon,name):
 		self._inv[0].append(weapon)
 		self._inv[1].append(name)
+	
+
+	def get_name(self):
+		if self.weapon:
+			for i, weapon in enumerate(self._inv[0]):
+				if self.weapon == weapon:
+					return self._inv[1][i]
+
+			return "Нету оружия"
 
 
 	def choose_weapon(self,ind):

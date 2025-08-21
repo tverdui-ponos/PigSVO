@@ -72,3 +72,5 @@ class Player(NPC):
 	@weapon.setter
 	def weapon(self,weapon):
 		self._weapon = weapon
+
+	

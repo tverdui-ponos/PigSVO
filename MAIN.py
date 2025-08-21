@@ -32,16 +32,20 @@ class Game:
 		self.gui = Gui(self.map.player)
 		
 		self.clock = pg.time.Clock()
+
 	def handle_events(self):
 		for event in pg.event.get():
 			if event.type == pg.QUIT:					
 				self.done = True
 			self.map.events(event)
+
 	def render(self):
 		self.screen.fill((0,0,0))
 		self.map.run()
 		self.gui.run()
 		pg.display.flip()
+
+		
 	def run(self):
 		while not self.done:
 			self.handle_events()

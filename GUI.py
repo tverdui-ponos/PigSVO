@@ -19,16 +19,11 @@ YELLOW = (225, 225, 0)
 PINK = (230, 50, 230)
 
 
+cached_text = {}
+cached_fonts = {}
 
-class Interface:
-	def __init__(self,x,y,width,height):
-		self._x = np.int16(x)
-		self._y = np.int16(y)
-		self._width = np.int16(width)
-		self._height = np.int16(height)
-		self._cached_text = {}
-		self._cached_fonts = {}
 
+class Text:
 	def make_font(self,fonts, size):
 		available = pg.font.get_fonts()
 		choices = map(lambda x:x.lower().replace(' ', ''), fonts)
@@ -39,26 +34,23 @@ class Interface:
 
 	def get_font(self,font_preferences, size):
 		key = str(font_preferences) + '|' + str(size)
-		font = self._cached_fonts.get(key, None)
+		font = cached_fonts.get(key, None)
 		if font == None:
 			font = self.make_font(font_preferences, size)
-			self._cached_fonts[key] = font
+			cached_fonts[key] = font
 		return font
 
 	def create_text(self,text, fonts, size, color):
 		key = '|'.join(map(str, (fonts, size, color, text)))
-		image = self._cached_text.get(key, None)
+		image = cached_text.get(key, None)
 		if image == None:
 			font = self.get_font(fonts, size)
 			image = font.render(text, True, color)
-			self._cached_text[key] = image
+			cached_text[key] = image
 		return image
 
-	def __getattr__(self, atr):
-		return atr
 
-
-class Hp_Bar(Object):
+class HpBar(Object):
 	def __init__(self, x, y, player, groups):
 		super().__init__(x, y, "materials/gui/map/picture/hp_bar.png", 300, 100, groups)
 
@@ -72,8 +64,17 @@ class Hp_Bar(Object):
 
 
 
-class Weapon_Label():
-	pass
+class WeaponLabel(pg.sprite.Sprite):
+	def __init__(self, x, y, player, groups):
+		super().__init__(groups)
+		self.text = Text()
+		self._player = player
+		self.image = self.text.create_text('Помргите', "Arial Black", 50, BLACK)
+		self.rect = self.image.get_rect(center=(x,y))
+	def update(self):
+		weapon_text = self._player.inventory.get_name()
+		self.image = self.text.create_text(f'{weapon_text}', "Arial Black", 50, BLACK)
+		
 
 
 
@@ -86,7 +87,8 @@ class Gui:
 		self.add_elements()
 
 	def add_elements(self):
-		return Hp_Bar(150, 50, self._player, (self.visible_objects, self.obstacle_objects))
+		HpBar(150, 50, self._player, (self.visible_objects, self.obstacle_objects))
+		WeaponLabel(100 , self.display_surface.get_size()[1] - 150 , self._player, (self.visible_objects, self.obstacle_objects))
 
 	def run(self):
 		self.obstacle_objects.update()
