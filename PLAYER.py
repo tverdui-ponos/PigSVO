@@ -15,8 +15,12 @@ engine = EngineFunc()
 class Player(NPC):
 	def __init__(self,x,y,groups):
 		super().__init__(x,y,hp=100, speed=10, damage=100, filename="materials/player/serega.png", width=150, height=100,groups=groups)
+		
 		self._groups = groups
-		self._weapon = None 
+		self._weapon = None
+
+		self.money = np.int32(0)
+
 		self.inventory = Inventory((self._groups[0], self._groups[2]), self._weapon)
 		self.inventory.add_weapon(Fists(self),'Руки')
 		self.inventory.add_weapon(Bat(self),'Бита')

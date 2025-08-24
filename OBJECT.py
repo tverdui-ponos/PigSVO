@@ -57,3 +57,20 @@ class Entity(Object):
 	@y.setter
 	def y(self, y):
 		self._y = y
+
+
+class Money(Object):
+	def __init__(self, x,y, groups):
+		super().__init__(x, y, 'materials/effects/money/bitcoin.png', 50, 50, groups)
+		
+		self._obstacle_sprites = groups[1]
+
+
+	def update(self):
+		collide = pg.sprite.spritecollide(self,self._obstacle_sprites,False)
+		if collide:
+			for sprite in collide:
+				if hasattr(sprite, 'money'):
+					sprite.money += 1
+					engine.play_sound('materials/effects/money/sound/pickup_money.mp3')
+					self.kill()

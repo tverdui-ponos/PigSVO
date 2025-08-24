@@ -64,7 +64,7 @@ class FireArms(Weapon):
 						width=width,height=height, player=player, filename=filename,
 						characteristic=characteristic)
 						
-	self._characteristic = characteristic
+		self._characteristic = characteristic
 		
 
 

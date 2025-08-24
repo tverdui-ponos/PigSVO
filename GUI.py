@@ -50,28 +50,47 @@ class Text:
 		return image
 
 
+
+
+class MoneyBar(Object):
+	def __init__(self, x, y, player, text, groups):
+		super().__init__(x, y, "materials/effects/money/bitcoin.png", 50, 50, groups)
+		self.text = text
+		self._player = player
+
+
+
+		self.amount_of_money = self.text.create_text(f'{self._player.money}', 'ArialBlack', 50, WHITE)
+		self.amount_of_money_rect = self.amount_of_money.get_rect(center=(self.rect.x + 90, self.rect.y + 26))
+
+	
+	def update(self,display):
+		self._money = self._player.money
+		self.amount_of_money = self.text.create_text(f'{self._money}', 'ArialBlack', 50, WHITE)
+		display.blit(self.amount_of_money, self.amount_of_money_rect)
+
+
 class HpBar(Object):
 	def __init__(self, x, y, player, groups):
 		super().__init__(x, y, "materials/gui/map/picture/hp_bar.png", 300, 100, groups)
 
-		self.display_surface = pg.display.get_surface()
 		self._player = player
 
-	def update(self):
+	def update(self,display):
 		self._hp = self._player.hp
 		self.bar = pg.Rect(self.rect.x + 18, self.rect.y, self._hp *  2.8, (self.rect.bottom + self.rect.y)) #pg.Rect(self.rect.left, self.rect.topleft, self._hp, self.rect.bottom)
-		pg.draw.rect(self.display_surface, GREEN, self.bar)
+		pg.draw.rect(display, GREEN, self.bar)
 
 
 
 class WeaponLabel(pg.sprite.Sprite):
-	def __init__(self, x, y, player, groups):
+	def __init__(self, x, y, player, text, groups):
 		super().__init__(groups)
-		self.text = Text()
+		self.text = text
 		self._player = player
 		self.image = self.text.create_text('Помргите', "Arial Black", 50, BLACK)
 		self.rect = self.image.get_rect(center=(x,y))
-	def update(self):
+	def update(self,display):
 		weapon_text = self._player.inventory.get_name()
 		self.image = self.text.create_text(f'{weapon_text}', "Arial Black", 50, BLACK)
 		
@@ -84,14 +103,16 @@ class Gui:
 		self.visible_objects = pg.sprite.Group()
 		self.obstacle_objects = pg.sprite.Group()
 		self._player = player
+		self.text = Text()
 		self.add_elements()
 
 	def add_elements(self):
-		HpBar(150, 50, self._player, (self.visible_objects, self.obstacle_objects))
-		WeaponLabel(100 , self.display_surface.get_size()[1] - 150 , self._player, (self.visible_objects, self.obstacle_objects))
+		self.hp_bar = HpBar(150, 50, self._player, (self.visible_objects, self.obstacle_objects))
+		self.weapon_label = WeaponLabel(100 , self.display_surface.get_size()[1] - 150 , self._player, self.text, (self.visible_objects, self.obstacle_objects))
+		self.money_bar = MoneyBar(20,self.hp_bar.rect.y + 150,self._player, self.text, (self.visible_objects, self.obstacle_objects))
 
 	def run(self):
-		self.obstacle_objects.update()
+		self.obstacle_objects.update(self.display_surface)
 		self.visible_objects.draw(self.display_surface)
 
 
