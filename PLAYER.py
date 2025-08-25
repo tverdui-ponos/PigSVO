@@ -42,15 +42,7 @@ class Player(NPC):
 					direction = engine.check_angle(self.rect, engine.get_mouse_pos(self._groups[0]))
 					groups = [self._groups[0],self._groups[2]]
 					npcs = self._groups[3]
-					match direction:
-						case 'left':
-							self._weapon.spawn_hit(direction, groups, npcs)
-						case 'right':
-							self._weapon.spawn_hit(direction, groups, npcs)
-						case 'top':
-							self._weapon.spawn_hit(direction, groups, npcs)
-						case 'bottom':
-							self._weapon.spawn_hit(direction, groups, npcs)	
+					self._weapon.spawn_hit(direction, groups, npcs)	
 					engine.play_sound('materials/weapon/melee/hit.mp3')
 							
 	def keyboard_event(self,event):

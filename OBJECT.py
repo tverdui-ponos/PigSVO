@@ -62,10 +62,9 @@ class Entity(Object):
 class Money(Object):
 	def __init__(self, x,y, groups):
 		super().__init__(x, y, 'materials/effects/money/bitcoin.png', 50, 50, groups)
-		
+
 		self._obstacle_sprites = groups[1]
-
-
+		
 	def update(self):
 		collide = pg.sprite.spritecollide(self,self._obstacle_sprites,False)
 		if collide:

@@ -25,13 +25,35 @@ class Map():
     def __init__(self,map_name):
         self.display_surface = pg.display.get_surface()
 
+
+        #
         self.obstacle_sprites = pg.sprite.Group()
-        self.physical_sprites = pg.sprite.Group()
         self.visible_sprites = SortCameraGroup()
-        self.npcs = pg.sprite.Group()
+        #
+
+        #
+        self.physical_sprites = pg.sprite.Group()
+        self.static_spites = pg.sprite.Group()
+        #
+
+
+        #
+        self.npcs_sprites = pg.sprite.Group()
+        self.friendly_npcs_sprites = pg.sprite.Group()
+        self.enemy_npcs_sprites = pg.sprite.Group()
+        #
+
 
         self.create_map(map_name)
-        self.collusion = Collisions()
+
+        self.collusion = Collisions(            
+            physical_sprites=self.physical_sprites,
+            static_spites=self.static_spites,
+
+            npcs_sprites=self.npcs_sprites,
+            friendly_npcs_sprites=self.friendly_npcs_sprites,
+            enemy_npcs_sprites=self.enemy_npcs_sprites
+        )
 
         engine.play_music('materials/music/ambient1.mp3', -1)
     def create_map(self,name):
@@ -53,6 +75,9 @@ class Map():
                 y = np.int64(row_index) * TILE_SIZE
 
                 self.spawn_object(col,x,y)
+
+                
+
     def spawn_tile(self,type,x,y):
         ''' # - Dirt
             G - Grass
@@ -61,7 +86,7 @@ class Map():
             case "#":
                 return 0
             case "G":
-                return Tile(x,y, [self.visible_sprites], (f"materials/map/tilemap/grass/grass{r.randint(1,5)}.png"))
+                return Tile(x,y, (self.visible_sprites), (f"materials/map/tilemap/grass/grass{r.randint(1,5)}.png"))
 
 
     def spawn_object(self,type,x,y):
@@ -71,18 +96,17 @@ class Map():
         '''
         match type:
             case "P":
-                self.player = Player(x,y, (self.visible_sprites, self.physical_sprites, self.obstacle_sprites, self.npcs))
+                self.player = Player(x,y, (self.visible_sprites, self.physical_sprites, self.obstacle_sprites, self.npcs_sprites, self.friendly_npcs_sprites))
             case "T":
-                return Object(x,y,(f'materials/map/object/trees/tree{r.randint(1,6)}.png'), 200,300, (self.visible_sprites, self.physical_sprites))
+                return Object(x,y,(f'materials/map/object/trees/tree{r.randint(1,6)}.png'), 200,300, (self.visible_sprites, self.static_spites))
             case "p":
-                return Pig(x,y, (self.visible_sprites, self.physical_sprites, self.obstacle_sprites, self.npcs))
-                
+                return Pig(x,y, (self.visible_sprites, self.physical_sprites, self.obstacle_sprites, self.npcs_sprites, self.enemy_npcs_sprites))
+
+    
 
     def run(self):
         self.visible_sprites.custom_draw(self.player, self.display_surface)
-        #self.collusion.collision_between_physical_object(self.physical_sprites,self.physical_sprites)
-        self.collusion.collison_betweeen_npc_and_static_objects(self.npcs, self.physical_sprites)
-        #self.visible_sprites.update()
+        self.collusion.collusion()
         self.obstacle_sprites.update()
     def events(self, event):
         self.player.control(event)

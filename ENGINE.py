@@ -91,8 +91,21 @@ engine = EngineFunc()
 
 
 class Collisions:
-	def collision_between_physical_objects(self, objects1, objects2):
-		collision = pg.sprite.groupcollide(objects1, objects2, False, False)
+	def __init__(self, physical_sprites, static_spites, 
+	npcs_sprites, friendly_npcs_sprites, enemy_npcs_sprites):
+
+		self._physical_sprites = physical_sprites
+		self._static_sprites = static_spites
+
+		self._npcs_sprites = npcs_sprites
+		self._friendly_npcs_sprites = friendly_npcs_sprites
+		self._enemy_npcs_sprites = enemy_npcs_sprites
+
+
+
+
+	def collision_between_physical_objects(self):
+		collision = pg.sprite.groupcollide(self._physical_sprites, self._physical_sprites, False, False)
 		for sprite1,sprite_list in collision.items():
 			for sprite2 in sprite_list:
 				if sprite1 != sprite2:
@@ -110,8 +123,8 @@ class Collisions:
 							sprite1.rect.y -= 1
 	
 
-	def collison_betweeen_npc_and_static_objects(self, npcs, objects):
-		collision = pg.sprite.groupcollide(npcs, objects, False, False)
+	def collison_betweeen_npc_and_static_objects(self):
+		collision = pg.sprite.groupcollide(self._npcs_sprites, self._static_sprites, False, False)
 		for sprite1,sprite_list in collision.items():
 			for sprite2 in sprite_list:
 				direction = engine.check_angle(sprite1.rect, sprite2.rect)
@@ -126,11 +139,18 @@ class Collisions:
 						sprite1.rect.y -= sprite1.speed	
 		
 
-	def collusion_between_enemies(self, enemy, sacrifice):
-		for _enemy,_sacrifice in zip(enemy,sacrifice):
-			if _enemy.rect.colliderect(_sacrifice.rect):
-				_sacrifice.hp -= _enemy.damage
+	def collusion_between_enemies(self):
+		collision = pg.sprite.groupcollide(self._friendly_npcs_sprites, self._enemy_npcs_sprites, False, False)
+		for sprite1,sprite_list in collision.items():
+			for sprite2 in sprite_list:
+				if sprite1 != sprite2:
+					sprite1.hp -= sprite2.damage
 
+	
+	def collusion(self):
+		self.collision_between_physical_objects()
+		self.collison_betweeen_npc_and_static_objects()
+		self.collusion_between_enemies()
 
 
 class SortCameraGroup(pg.sprite.Group):
