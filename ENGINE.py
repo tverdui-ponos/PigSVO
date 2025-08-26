@@ -1,10 +1,12 @@
 import pygame as pg
 import numpy as np
 
+import math
 
 image_libraly = {}
 sound_library = {}
 music_library = {}
+
 
 
 class EngineFunc:
@@ -32,9 +34,9 @@ class EngineFunc:
 			if sound == None:
 				sound = pg.mixer.Sound(path)
 				sound_library[path] = sound
-			sound.play()
 		except Exception as e:
 			print(f'Error loading sound {path}, {e}')
+		sound.play()
 
 
 	
@@ -47,7 +49,7 @@ class EngineFunc:
 	
 	def length_of_vector(self,vector):
 		#vector = np.array(vector)
-		return math.sqrt((vector[0] * vector[0]) + (vector[1] * vector[1]))
+		return np.sqrt((vector[0] * vector[0]) + (vector[1] * vector[1]))
 
 
 	def normalize_vector(self, vector):

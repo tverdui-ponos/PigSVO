@@ -63,9 +63,27 @@ class FireArms(Weapon):
 		super().__init__(x=player.x, y=player.y, damage=damage, 
 						width=width,height=height, player=player, filename=filename,
 						characteristic=characteristic)
-						
-		self._characteristic = characteristic
+
+		# (magazine_volume, delay_before_shoots, ammo_type)
+
+		self._characteristic = lambda x: characteristic[characteristic.index(x)]
+
+
+
+class Tokarev(FireArms):
+	def __init__(self, player):
+		magazine_volume = 8
+		delay_before_shoots = 2
+		ammo_type = pistol
+		super().__init__(x=player.x, y=player.y, damage=3, 
+						width=50,height=50, player=player,
+						filename='materials/weapon/firearms/tokarev_pistol/tokarev.png',
+						characteristic=(magazine_volume, delay_before_shoots, ammo_type))
+	
+	def shoot(self):
+		pass
 		
+	
 
 
 

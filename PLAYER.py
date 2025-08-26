@@ -14,7 +14,7 @@ engine = EngineFunc()
 
 class Player(NPC):
 	def __init__(self,x,y,groups):
-		super().__init__(x,y,hp=100, speed=10, damage=100, filename="materials/player/serega.png", width=150, height=100,groups=groups)
+		super().__init__(x,y,hp=100, speed=10, damage=0, filename="materials/player/serega.png", width=150, height=100,groups=groups)
 		
 		self._groups = groups
 		self._weapon = None
