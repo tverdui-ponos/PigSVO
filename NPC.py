@@ -28,7 +28,15 @@ class NPC(Entity):
 		return self._damage
 	
 
-
+	@property
+	def hp(self):
+		return self._hp
+	
+	@hp.setter
+	def hp(self,hp):
+		if self.hp > hp:
+			BloodParticle(self.rect.x, self.rect.y, (self._visible_sprites, self._obstacle_sprites))
+		self._hp = hp
 
 
 
@@ -47,7 +55,7 @@ class Pig(NPC):
 	@hp.setter
 	def hp(self,hp):
 		if self.hp > hp:
-			engine.play_sound(f'materials/npc/pig/sound/pig_idle{r.randint(1,3)}.ogg')
+			BloodParticle(self.rect.x, self.rect.y, (self._visible_sprites, self._obstacle_sprites))
 			BloodParticle(self.rect.x, self.rect.y, (self._visible_sprites, self._obstacle_sprites))
 			engine.play_sound(f'materials/effects/blood/bleeding.mp3')
 		self._hp = hp

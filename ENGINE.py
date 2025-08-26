@@ -10,6 +10,7 @@ music_library = {}
 
 
 class EngineFunc:
+
 	def get_image(self,path, i_x, i_y):
 		image = image_libraly.get(path)
 		try:
@@ -28,15 +29,18 @@ class EngineFunc:
 				return image			
 
 	
-	def play_sound(self,path):
-		sound = sound_library.get(path)
+	def play_sound(self,path, volume=1.0):
 		try:
-			if sound == None:
+			sound = sound_library.get(path)
+			if sound is None:
 				sound = pg.mixer.Sound(path)
 				sound_library[path] = sound
+
+			sound.set_volume(volume)
+			sound.play()
 		except Exception as e:
 			print(f'Error loading sound {path}, {e}')
-		sound.play()
+			
 
 
 	
@@ -159,13 +163,24 @@ class SortCameraGroup(pg.sprite.Group):
 	def __init__(self):
 		super().__init__()
 		self.display_surface = pg.display.get_surface()
-		self.size = np.array(self.display_surface.get_size()) // 2 
-		self.offset = pg.math.Vector2
+		self.size = np.array(self.display_surface.get_size()) // 2
+		self.offset = pg.math.Vector2()
+		
 	def custom_draw(self, player, *screen):
+
 		self.offset = player.rect.center - self.size
+
+		camera_rect = pg.Rect(
+			self.offset[0], 
+			self.offset[1],
+			self.display_surface.get_width(),
+			self.display_surface.get_height()
+		)
+
 		for sprite in self.sprites():
-			offset_pos = sprite.rect.topleft - self.offset
-			self.display_surface.blit(sprite.image, offset_pos)
+			if sprite.rect.colliderect(camera_rect):
+				offset_pos = sprite.rect.topleft - self.offset
+				self.display_surface.blit(sprite.image, offset_pos)
 
 
 

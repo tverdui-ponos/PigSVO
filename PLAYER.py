@@ -17,11 +17,15 @@ class Player(NPC):
 		super().__init__(x,y,hp=100, speed=10, damage=0, filename="materials/player/serega.png", width=150, height=100,groups=groups)
 		
 		self._groups = groups
+
+		self._visible_sprites = self._groups[0]
+		self._obstacle_sprites = self._groups[2]
+
 		self._weapon = None
 
 		self.money = np.int32(0)
 
-		self.inventory = Inventory((self._groups[0], self._groups[2]), self._weapon)
+		self.inventory = Inventory((self._visible_sprites, self._obstacle_sprites), self._weapon)
 		self.inventory.add_weapon(Fists(self),'Руки')
 		self.inventory.add_weapon(Bat(self),'Бита')
 	def movement(self):
@@ -39,8 +43,8 @@ class Player(NPC):
 		if self._weapon != None:
 			if event.type == pg.MOUSEBUTTONDOWN:
 				if event.button == 1:
-					direction = engine.check_angle(self.rect, engine.get_mouse_pos(self._groups[0]))
-					groups = [self._groups[0],self._groups[2]]
+					direction = engine.check_angle(self.rect, engine.get_mouse_pos(self._visible_sprites))
+					groups = [self._visible_sprites,self._obstacle_sprites]
 					npcs = self._groups[3]
 					self._weapon.spawn_hit(direction, groups, npcs)	
 					engine.play_sound('materials/weapon/melee/hit.mp3')

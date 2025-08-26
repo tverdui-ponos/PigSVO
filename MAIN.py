@@ -25,7 +25,7 @@ engine = EngineFunc()
 class Game:
 	def __init__(self):
 		#Engine Init
-		self.screen = pg.display.set_mode((1024,768))
+		self.screen = pg.display.set_mode((1366,768))
 		self.done = False
 		
 		self.map = Map('testmap')
