@@ -28,7 +28,7 @@ class Game:
 		self.screen = pg.display.set_mode((1366,768))
 		self.done = False
 		
-		self.map = Map('testmap')
+		self.map = Map('military_crime')
 		self.gui = Gui(self.map.player)
 		
 		self.clock = pg.time.Clock()

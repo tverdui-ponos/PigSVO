@@ -2,6 +2,10 @@ import pygame as pg
 import numpy as np
 from ENGINE import EngineFunc
 
+from PARTICLE import BloodParticle, SawdustParticle
+
+
+
 engine = EngineFunc()
 
 
@@ -42,9 +46,12 @@ class Entity(Object):
 	@property
 	def hp(self):
 		return self._hp
+	
 	@hp.setter
-	def hp(self, hp):
+	def hp(self,hp):
 		self._hp = hp
+		if self._hp <= 0:
+			self.kill()
 	@property
 	def x(self):
 		return self._x
@@ -58,6 +65,40 @@ class Entity(Object):
 	def y(self, y):
 		self._y = y
 
+
+# Entity
+
+class Crate(Entity):
+	def __init__(self, x, y, groups):
+		super().__init__(x, y, 'materials/map/object/crates/crate.png', 130, 130, groups, 80)
+		self._visible_sprites = groups[0]
+		self._physical_sprites = groups[1]
+		self._obstacle_sprites = groups[2]
+
+
+	@property
+	def hp(self):
+		return self._hp
+	
+	@hp.setter
+	def hp(self,hp):
+		if self.hp > hp:
+			SawdustParticle(self.rect.x, self.rect.y, (self._visible_sprites, self._obstacle_sprites))
+		self._hp = hp
+		if self._hp <= 0:
+			self.kill()
+
+
+
+
+
+
+
+
+
+
+
+# Pickaple
 
 class Money(Object):
 	def __init__(self, x,y, groups):

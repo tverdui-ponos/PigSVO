@@ -92,6 +92,8 @@ class WeaponLabel(pg.sprite.Sprite):
 		self.rect = self.image.get_rect(center=(x,y))
 	def update(self,display):
 		weapon_text = self._player.inventory.get_name()
+		if hasattr(self._player.weapon, 'ammo'):
+			weapon_text += str(self._player.weapon.ammo)
 		self.image = self.text.create_text(f'{weapon_text}', "Arial Black", 50, BLACK)
 
 

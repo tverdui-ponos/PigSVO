@@ -86,9 +86,10 @@ class Map():
         '''
         match type:
             case "#":
-                return 0
+                return Tile(x, y, (self.visible_sprites), (f"materials/map/tilemap/dirt/dirt.png"))
+
             case "G":
-                return Tile(x,y, (self.visible_sprites), (f"materials/map/tilemap/grass/grass{r.randint(1,5)}.png"))
+                return Tile(x, y, (self.visible_sprites), (f"materials/map/tilemap/grass/grass{r.randint(1,5)}.png"))
 
 
     def spawn_object(self,type,x,y):
@@ -104,6 +105,11 @@ class Map():
                 return Object(x,y,(f'materials/map/object/trees/tree{r.randint(1,6)}.png'), 200,300, (self.visible_sprites, self.static_spites))
             case "p":
                 return Pig(x,y, (self.visible_sprites, self.physical_sprites, self.obstacle_sprites, self.npcs_sprites, self.enemy_npcs_sprites))
+            case "c":
+                return Crate(x, y, (self.visible_sprites, self.physical_sprites, self.obstacle_sprites))
+            case 't':
+                return Entity(x, y, 'materials/map/object/target.png', 100, 130, (self.visible_sprites, self.obstacle_sprites), 500)
+
             
             case 'W_Tokarev':
                 return WeaponObject(x, y, Tokarev(self.player), (self.visible_sprites, self.obstacle_sprites))

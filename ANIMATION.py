@@ -26,7 +26,7 @@ class Animation(pg.sprite.Sprite):
 			self.kill()
 
 class MeleeHit(Animation):
-	def __init__(self, pos, groups, angle, player, npcs):
+	def __init__(self, pos, groups, angle, player):
 		super().__init__(animation_frames=[engine.get_image('materials/weapon/melee/hit_right.png', 100, 100)], pos=pos, groups=groups, duration=1)
 		self._player = player
 
@@ -39,7 +39,7 @@ class MeleeHit(Animation):
 
 		self.image = self._animation_frames[0]
 		self.rect = self.image.get_rect(center=pos)	
-		self._npcs = npcs
+		self._obstacle_sprites = groups[1]
 	
 	def update(self):
 		if len(self._animation_frames) > 0:
@@ -50,21 +50,21 @@ class MeleeHit(Animation):
 		else:
 			self.kill()
 				
-		for npc in self._npcs:
-			if self.rect.colliderect(npc.rect):
-				if npc != self._player:
-					npc.hp -= self._player.weapon.damage
+		for sacrifice in self._obstacle_sprites:
+			if self.rect.colliderect(sacrifice.rect):
+				if hasattr(sacrifice, 'hp'):
+					if sacrifice != self._player:
+						sacrifice.hp -= self._player.weapon.damage
 
-					direction = np.array(np.array(npc.rect.center) - np.array(self._player.rect.center))
+						direction = np.array(np.array(sacrifice.rect.center) - np.array(self._player.rect.center))
 					
-					if engine.length_of_vector(direction) >= 0:
-						direction = engine.normalize_vector(direction)
+						if engine.length_of_vector(direction) >= 0:
+							direction = engine.normalize_vector(direction)
 
-					npc.rect.x += direction[0] * self._player.weapon.damage
-					npc.rect.y += direction[1] * self._player.weapon.damage
+						sacrifice.rect.x += direction[0] * self._player.weapon.damage
+						sacrifice.rect.y += direction[1] * self._player.weapon.damage
 					
-					engine.play_sound(self._player.weapon.sounds[1])
-					break
+						engine.play_sound(self._player.weapon.sounds[1])
 				
 
 

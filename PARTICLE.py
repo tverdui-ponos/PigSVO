@@ -18,7 +18,9 @@ GREEN = (0, 200, 64)
 YELLOW = (225, 225, 0)
 PINK = (230, 50, 230)
 
-BLOOD_COLOR = [(255,0,0), (176,0,0), (255,36,0), (72,6,7), (150,0,24)]
+BLOOD_COLOR = ((255,0,0), (176,0,0), (255,36,0), (72,6,7), (150,0,24))
+SAWDUST_COLOR = ((101, 67, 33), (80, 40, 50), (145, 129, 81))
+
 
 RED = (255,0,0)
 
@@ -70,6 +72,12 @@ class Particle(pg.sprite.Sprite):
 class BloodParticle(Particle):
 	def __init__(self, x, y, groups):
 		super().__init__(x,y, 10, 10, r.uniform(-10.0, 10.0), r.uniform(-10.0, 10.0), BLOOD_COLOR[r.randint(0,4)], groups)
+
+
+class SawdustParticle(Particle):
+	def __init__(self, x, y, groups):
+		super().__init__(x,y, 15, 15, r.uniform(-10.0, 10.0), r.uniform(-10.0, 10.0), SAWDUST_COLOR[r.randint(0,2)], groups)
+
 
 
 

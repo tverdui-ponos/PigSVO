@@ -55,7 +55,7 @@ class Player(NPC):
 						direction = engine.check_angle(self.rect, mouse_pos)
 						npcs = self._groups[3]
 
-						self._weapon.spawn_hit(direction, groups, npcs)	
+						self._weapon.spawn_hit(direction, groups)	
 
 					elif hasattr(self.weapon, 'shoot'):
 						self._weapon.shoot(mouse_pos, groups)

@@ -1,5 +1,7 @@
 import pygame as pg
 import numpy as np
+import time as t
+
 
 import math
 
@@ -7,6 +9,7 @@ image_libraly = {}
 sound_library = {}
 music_library = {}
 
+start_time = t.time()
 
 
 class EngineFunc:
