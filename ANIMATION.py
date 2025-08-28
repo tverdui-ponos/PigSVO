@@ -56,13 +56,14 @@ class MeleeHit(Animation):
 					npc.hp -= self._player.weapon.damage
 
 					direction = np.array(np.array(npc.rect.center) - np.array(self._player.rect.center))
+					
 					if engine.length_of_vector(direction) >= 0:
 						direction = engine.normalize_vector(direction)
 
 					npc.rect.x += direction[0] * self._player.weapon.damage
 					npc.rect.y += direction[1] * self._player.weapon.damage
 					
-					engine.play_sound('materials/weapon/melee/hands/sound/direct_hit.mp3')
+					engine.play_sound(self._player.weapon.sounds[1])
 					break
 				
 

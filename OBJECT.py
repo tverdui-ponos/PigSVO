@@ -73,3 +73,20 @@ class Money(Object):
 					sprite.money += 1
 					engine.play_sound('materials/effects/money/sound/pickup_money.mp3')
 					self.kill()
+					break
+
+
+class WeaponObject(Object):
+	def __init__(self, x, y, weapon, groups):
+		super().__init__(x, y, weapon.filename, weapon.width, weapon.height, groups)
+		self._weapon = weapon
+		self._obstacle_sprites = groups[1]
+
+	def update(self):
+		collide = pg.sprite.spritecollide(self,self._obstacle_sprites,False)
+		if collide:
+			for sprite in collide:
+				if hasattr(sprite, 'inventory'):
+					sprite.inventory.add_weapon(self._weapon, (self._weapon.filename.split('/')[-1]).split('.')[0])
+					self.kill()
+					break

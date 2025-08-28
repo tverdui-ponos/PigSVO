@@ -5,7 +5,7 @@ import math
 import numpy as np
 
 from NPC import NPC
-from WEAPON import Fists,Bat
+from WEAPON import Fists,Bat, Tokarev
 from ENGINE import Inventory,EngineFunc
 from ANIMATION import *
 
@@ -26,8 +26,11 @@ class Player(NPC):
 		self.money = np.int32(0)
 
 		self.inventory = Inventory((self._visible_sprites, self._obstacle_sprites), self._weapon)
+
 		self.inventory.add_weapon(Fists(self),'Руки')
-		self.inventory.add_weapon(Bat(self),'Бита')
+		#self.inventory.add_weapon(Bat(self),'Бита')
+		#self.inventory.add_weapon(Tokarev(self), 'Пистолет Токарева')
+
 	def movement(self):
 		button = pg.key.get_pressed()
 		if button[pg.K_w]:
@@ -43,11 +46,20 @@ class Player(NPC):
 		if self._weapon != None:
 			if event.type == pg.MOUSEBUTTONDOWN:
 				if event.button == 1:
-					direction = engine.check_angle(self.rect, engine.get_mouse_pos(self._visible_sprites))
-					groups = [self._visible_sprites,self._obstacle_sprites]
-					npcs = self._groups[3]
-					self._weapon.spawn_hit(direction, groups, npcs)	
-					engine.play_sound('materials/weapon/melee/hit.mp3')
+
+					mouse_pos = engine.get_mouse_pos(self._visible_sprites)
+					
+					groups = (self._visible_sprites, self._obstacle_sprites)
+
+					if hasattr(self._weapon, 'spawn_hit'):
+						direction = engine.check_angle(self.rect, mouse_pos)
+						npcs = self._groups[3]
+
+						self._weapon.spawn_hit(direction, groups, npcs)	
+
+					elif hasattr(self.weapon, 'shoot'):
+						self._weapon.shoot(mouse_pos, groups)
+
 							
 	def keyboard_event(self,event):
 		if event.type == pg.KEYDOWN:
@@ -56,6 +68,14 @@ class Player(NPC):
 					self._weapon = self.inventory.choose_weapon(0)
 				case pg.K_1:
 					self._weapon = self.inventory.choose_weapon(1)
+				case pg.K_2:
+					self._weapon = self.inventory.choose_weapon(2)
+				case pg.K_3:
+					self._weapon = self.inventory.choose_weapon(3)
+				case pg.K_4:
+					self._weapon = self.inventory.choose_weapon(4)
+				case pg.K_5:
+					self._weapon = self.inventory.choose_weapon(5)
 				
 	def control(self,event):
 		#self.movement()
