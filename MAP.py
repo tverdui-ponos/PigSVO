@@ -7,8 +7,8 @@ from ENGINE import EngineFunc,Collisions,SortCameraGroup
 from NPC import *
 from PLAYER import *
 from OBJECT import *
-from WEAPON import Bat, Tokarev
 
+from GROUPS import visible_sprites, obstacle_sprites, physical_sprites, static_sprites, npcs, friendly_npcs, enemys_npcs
 
 engine = EngineFunc()
 
@@ -16,45 +16,38 @@ TILE_SIZE = np.int16(128)
 
 
 
+
+
+
 class Tile(pg.sprite.Sprite):
-    def __init__(self, x, y, groups,image):
-        super().__init__(groups)
+    def __init__(self, x, y, image):
+        if visible_sprites != None:
+            super().__init__(visible_sprites)
         self.image = engine.get_image(image, TILE_SIZE, TILE_SIZE).convert()
         self.rect = self.image.get_rect(topleft = (x,y))
         
 
 class Map():
     def __init__(self,map_name):
-        self.display_surface = pg.display.get_surface()
 
-
-        #
-        self.obstacle_sprites = pg.sprite.Group()
-        self.visible_sprites = SortCameraGroup()
-        #
-
-        #
-        self.physical_sprites = pg.sprite.Group()
-        self.static_spites = pg.sprite.Group()
-        #
-
-
-        #
-        self.npcs_sprites = pg.sprite.Group()
-        self.friendly_npcs_sprites = pg.sprite.Group()
-        self.enemy_npcs_sprites = pg.sprite.Group()
-        #
+        global visible_sprites
 
 
         self.create_map(map_name)
 
-        self.collusion = Collisions(            
-            physical_sprites=self.physical_sprites,
-            static_spites=self.static_spites,
+        self.display_surface = pg.display.get_surface()
 
-            npcs_sprites=self.npcs_sprites,
-            friendly_npcs_sprites=self.friendly_npcs_sprites,
-            enemy_npcs_sprites=self.enemy_npcs_sprites
+        if visible_sprites is None:
+            visible_sprites = SortCameraGroup()
+
+        self.collusion = Collisions(
+
+            npcs=npcs,
+            friendly_npcs = friendly_npcs,
+            enemys_npcs = enemys_npcs,
+            physical_sprites=physical_sprites,
+            static_sprites=static_sprites
+
         )
 
         engine.play_music('materials/music/ambient1.mp3', -1)
@@ -77,51 +70,38 @@ class Map():
                 y = np.int64(row_index) * TILE_SIZE
 
                 self.spawn_object(col,x,y)
-
-                
-
     def spawn_tile(self,type,x,y):
         ''' # - Dirt
             G - Grass
         '''
         match type:
             case "#":
-                return Tile(x, y, (self.visible_sprites), (f"materials/map/tilemap/dirt/dirt.png"))
-
+                return 0
             case "G":
-                return Tile(x, y, (self.visible_sprites), (f"materials/map/tilemap/grass/grass{r.randint(1,5)}.png"))
+                return Tile(x,y, (f"materials/map/tilemap/grass/grass{r.randint(1,5)}.png"))
 
 
     def spawn_object(self,type,x,y):
         ''' P - Player
             T - Tree
             p - Pig
-            W_...(name_weapon) - WeaponObject
         '''
         match type:
             case "P":
-                self.player = Player(x,y, (self.visible_sprites, self.physical_sprites, self.obstacle_sprites, self.npcs_sprites, self.friendly_npcs_sprites))
+                self.player = Player(x,y)
             case "T":
-                return Object(x,y,(f'materials/map/object/trees/tree{r.randint(1,6)}.png'), 200,300, (self.visible_sprites, self.static_spites))
+                return Object(x,y,(f'materials/map/object/trees/tree{r.randint(1,6)}.png'), 200,300, (visible_sprites, static_sprites))
             case "p":
-                return Pig(x,y, (self.visible_sprites, self.physical_sprites, self.obstacle_sprites, self.npcs_sprites, self.enemy_npcs_sprites))
-            case "c":
-                return Crate(x, y, (self.visible_sprites, self.physical_sprites, self.obstacle_sprites))
-            case 't':
-                return Entity(x, y, 'materials/map/object/target.png', 100, 130, (self.visible_sprites, self.obstacle_sprites), 500)
-
-            
-            case 'W_Tokarev':
-                return WeaponObject(x, y, Tokarev(self.player), (self.visible_sprites, self.obstacle_sprites))
-            case 'W_Bat':
-                return WeaponObject(x, y, Bat(self.player), (self.visible_sprites, self.obstacle_sprites))
-
-    
+                return Pig(x,y)
+                
 
     def run(self):
-        self.visible_sprites.custom_draw(self.player, self.display_surface)
-        self.collusion.collusion()
-        self.obstacle_sprites.update()
+        visible_sprites.custom_draw(self.player, self.display_surface)
+        #self.collusion.collision_between_physical_object(self.physical_sprites,self.physical_sprites)
+        self.collusion.collison_betweeen_npc_and_static_objects(npcs, static_sprites)
+        self.collusion.collusion_between_enemies(npcs, npcs)
+        #visible_sprites.update()
+        obstacle_sprites.update()
     def events(self, event):
         self.player.control(event)
 

@@ -4,9 +4,6 @@ import random as r
 import numpy as np
 
 
-from PLAYER import *
-from ENGINE import *
-from ANIMATION import *
 from MAP import Map
 from GUI import Gui
 
@@ -19,7 +16,6 @@ pg.display.set_caption('PigSVO')
 pg.mouse.set_cursor(pg.SYSTEM_CURSOR_CROSSHAIR)
 
 
-engine = EngineFunc()
 
 
 class Game:
@@ -28,7 +24,7 @@ class Game:
 		self.screen = pg.display.set_mode((1366,768))
 		self.done = False
 		
-		self.map = Map('military_crime')
+		self.map = Map('testmap')
 		self.gui = Gui(self.map.player)
 		
 		self.clock = pg.time.Clock()

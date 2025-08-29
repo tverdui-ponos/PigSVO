@@ -1,19 +1,14 @@
 import pygame as pg
 import numpy as np
-import time as t
 
-
-import math
+#from MAP import visible_sprites, obstacle_sprites, physical_sprites, static_sprites, npcs, friendly_npcs, enemys_npcs
 
 image_libraly = {}
 sound_library = {}
 music_library = {}
 
-start_time = t.time()
-
 
 class EngineFunc:
-
 	def get_image(self,path, i_x, i_y):
 		image = image_libraly.get(path)
 		try:
@@ -32,18 +27,15 @@ class EngineFunc:
 				return image			
 
 	
-	def play_sound(self,path, volume=1.0):
+	def play_sound(self,path):
+		sound = sound_library.get(path)
 		try:
-			sound = sound_library.get(path)
-			if sound is None:
+			if sound == None:
 				sound = pg.mixer.Sound(path)
 				sound_library[path] = sound
-
-			sound.set_volume(volume)
 			sound.play()
 		except Exception as e:
 			print(f'Error loading sound {path}, {e}')
-			
 
 
 	
@@ -56,7 +48,7 @@ class EngineFunc:
 	
 	def length_of_vector(self,vector):
 		#vector = np.array(vector)
-		return np.sqrt((vector[0] * vector[0]) + (vector[1] * vector[1]))
+		return math.sqrt((vector[0] * vector[0]) + (vector[1] * vector[1]))
 
 
 	def normalize_vector(self, vector):
@@ -95,29 +87,19 @@ class EngineFunc:
 
 		return world_mouse_pos
 
-	
-	
-
 engine = EngineFunc()
 
 
 
 class Collisions:
-	def __init__(self, physical_sprites, static_spites, 
-	npcs_sprites, friendly_npcs_sprites, enemy_npcs_sprites):
-
+	def __init__(self, npcs, enemys_npcs, friendly_npcs, 
+	physical_sprites, static_sprites):
+		self._npcs = npcs
 		self._physical_sprites = physical_sprites
-		self._static_sprites = static_spites
+		self._static_sprites = static_sprites
 
-		self._npcs_sprites = npcs_sprites
-		self._friendly_npcs_sprites = friendly_npcs_sprites
-		self._enemy_npcs_sprites = enemy_npcs_sprites
-
-
-
-
-	def collision_between_physical_objects(self):
-		collision = pg.sprite.groupcollide(self._physical_sprites, self._physical_sprites, False, False)
+	def collision_between_physical_objects(self, objects1, objects2):
+		collision = pg.sprite.groupcollide(objects1, objects2, False, False)
 		for sprite1,sprite_list in collision.items():
 			for sprite2 in sprite_list:
 				if sprite1 != sprite2:
@@ -135,8 +117,8 @@ class Collisions:
 							sprite1.rect.y -= 1
 	
 
-	def collison_betweeen_npc_and_static_objects(self):
-		collision = pg.sprite.groupcollide(self._npcs_sprites, self._static_sprites, False, False)
+	def collison_betweeen_npc_and_static_objects(self, npcs, static_objects):
+		collision = pg.sprite.groupcollide(npcs, static_objects, False, False)
 		for sprite1,sprite_list in collision.items():
 			for sprite2 in sprite_list:
 				direction = engine.check_angle(sprite1.rect, sprite2.rect)
@@ -151,42 +133,39 @@ class Collisions:
 						sprite1.rect.y -= sprite1.speed	
 		
 
-	def collusion_between_enemies(self):
-		collision = pg.sprite.groupcollide(self._friendly_npcs_sprites, self._enemy_npcs_sprites, False, False)
+	def collusion_between_enemies(self, friend, enemy):
+		collision = pg.sprite.groupcollide(friend, enemy, False, False)
 		for sprite1,sprite_list in collision.items():
 			for sprite2 in sprite_list:
 				if sprite1 != sprite2:
 					sprite1.hp -= sprite2.damage
 
-	
-	def collusion(self):
-		self.collision_between_physical_objects()
-		self.collison_betweeen_npc_and_static_objects()
-		self.collusion_between_enemies()
 
 
 class SortCameraGroup(pg.sprite.Group):
+	_instance = None 
+
+
+	def __new__(cls, *args, **kwargs):
+		if cls._instance is None:
+			cls._instance = super().__new__(cls)
+			cls._instance.__init__(*args, **kwargs)
+			return cls._instance
+
+
 	def __init__(self):
-		super().__init__()
-		self.display_surface = pg.display.get_surface()
-		self.size = np.array(self.display_surface.get_size()) // 2
-		self.offset = pg.math.Vector2()
-		
+		if not hasattr(self, '_init'):
+			super().__init__()
+			self.display_surface = pg.display.get_surface()
+			self.size = np.array(self.display_surface.get_size()) // 2 
+			self.offset = pg.math.Vector2
+			self._init = True
+
 	def custom_draw(self, player, *screen):
-
 		self.offset = player.rect.center - self.size
-
-		camera_rect = pg.Rect(
-			self.offset[0], 
-			self.offset[1],
-			self.display_surface.get_width(),
-			self.display_surface.get_height()
-		)
-
 		for sprite in self.sprites():
-			if sprite.rect.colliderect(camera_rect):
-				offset_pos = sprite.rect.topleft - self.offset
-				self.display_surface.blit(sprite.image, offset_pos)
+			offset_pos = sprite.rect.topleft - self.offset
+			self.display_surface.blit(sprite.image, offset_pos)
 
 
 
@@ -210,8 +189,6 @@ class Inventory:
 			for i, weapon in enumerate(self._inv[0]):
 				if self.weapon == weapon:
 					return self._inv[1][i]
-
-			return "Нету оружия"
 
 
 	def choose_weapon(self,ind):
