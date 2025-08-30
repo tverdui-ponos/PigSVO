@@ -1,13 +1,12 @@
 import pygame as pg
 import numpy as np
 
-from ENGINE import EngineFunc
+#from ENGINE import get_image
 from OBJECT import Object
 
+from ENGINE import get_image
 
 pg.font.init()
-
-engine = EngineFunc()
 
 
 WHITE = (255, 255, 255)
@@ -88,12 +87,38 @@ class WeaponLabel(pg.sprite.Sprite):
 		super().__init__(groups)
 		self.text = text
 		self._player = player
+
 		self.image = self.text.create_text('Помргите', "Arial Black", 50, BLACK)
+
 		self.rect = self.image.get_rect(center=(x,y))
 	def update(self,display):
 		weapon_text = self._player.inventory.get_name()
-		self.image = self.text.create_text(f'{weapon_text}', "Arial Black", 50, BLACK)
+
 		
+
+		if hasattr(self._player.weapon, 'full_ammo'):
+			weapon_text = weapon_text + '          ' + str(self._player.weapon.magazine_ammo) + '/' + str(self._player.weapon.full_ammo)
+		self.image = self.text.create_text(f'{weapon_text}', "Arial Black", 50, BLACK)
+
+		if hasattr(self._player.weapon, 'filename'):
+			self.weapon_image = get_image(self._player.weapon.filename, self._player.weapon.width, self._player.weapon.height) 
+
+			display.blit(self.weapon_image, (self.rect.x + 10, self.rect.y + 60))
+
+
+class FPS_label(pg.sprite.Sprite):
+	def __init__(self, x, y, text, groups):
+		super().__init__(groups)
+		self.text = text
+		self.image = self.text.create_text('Помргите', "Arial Black", 50, WHITE)
+		self.rect = self.image.get_rect(center=(x,y))
+
+		self.clock = pg.time.Clock()
+
+	def update(self,display):
+		self.fps = int(self.clock.get_fps())
+		self.image = self.text.create_text(f'{self.fps}', "Arial Black", 30, WHITE)
+		self.clock.tick()
 
 
 
@@ -107,10 +132,11 @@ class Gui:
 		self.add_elements()
 
 	def add_elements(self):
+		display_size = self.display_surface.get_size()
 		self.hp_bar = HpBar(150, 50, self._player, (self.visible_objects, self.obstacle_objects))
-		self.weapon_label = WeaponLabel(100 , self.display_surface.get_size()[1] - 150 , self._player, self.text, (self.visible_objects, self.obstacle_objects))
-		self.money_bar = MoneyBar(20,self.hp_bar.rect.y + 150,self._player, self.text, (self.visible_objects, self.obstacle_objects))
-
+		self.weapon_label = WeaponLabel(100 , display_size[1] - 150 , self._player, self.text, (self.visible_objects, self.obstacle_objects))
+		self.money_bar = MoneyBar(30,self.hp_bar.rect.y + 140,self._player, self.text, (self.visible_objects, self.obstacle_objects))
+		FPS_label(display_size[0] - 30, 30,  self.text, (self.visible_objects, self.obstacle_objects))
 	def run(self):
 		self.obstacle_objects.update(self.display_surface)
 		self.visible_objects.draw(self.display_surface)

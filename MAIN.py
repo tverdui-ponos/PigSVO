@@ -4,6 +4,8 @@ import random as r
 import numpy as np
 
 
+from PLAYER import *
+from ANIMATION import *
 from MAP import Map
 from GUI import Gui
 
@@ -11,10 +13,9 @@ from GUI import Gui
 
 
 pg.init()
-pg.display.set_caption('PigSVO')
+pg.display.set_caption('федя натурал')
 #pygame.display.set_icon(pygame.image.load("app.bmp"))
 pg.mouse.set_cursor(pg.SYSTEM_CURSOR_CROSSHAIR)
-
 
 
 
@@ -24,7 +25,7 @@ class Game:
 		self.screen = pg.display.set_mode((1366,768))
 		self.done = False
 		
-		self.map = Map('testmap')
+		self.map = Map('military_crime')
 		self.gui = Gui(self.map.player)
 		
 		self.clock = pg.time.Clock()

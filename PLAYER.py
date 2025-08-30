@@ -1,30 +1,37 @@
 import pygame as pg
 import random as r
-
+from pygame.locals import *
+import math
 import numpy as np
 
 from NPC import NPC
-from WEAPON import Fists,Bat
-from ENGINE import Inventory,EngineFunc
+from WEAPON import Fists,Bat, Tokarev
+from ENGINE import Inventory, get_mouse_pos
+from MATHLIB import check_angle
+
+
+
 from ANIMATION import *
 
-from GROUPS import visible_sprites, obstacle_sprites, physical_sprites, static_sprites, npcs, friendly_npcs, enemys_npcs
-
-engine = EngineFunc()
 
 class Player(NPC):
-	def __init__(self,x,y):
-		super().__init__(x,y,hp=100, speed=10, damage=0,
-		filename="materials/player/serega.png", width=150, height=100,
-		groups=(visible_sprites, physical_sprites, obstacle_sprites, npcs, friendly_npcs))
+	def __init__(self,x,y,groups):
+		super().__init__(x,y,hp=100, speed=10, damage=0, filename="materials/player/serega.png", width=150, height=100,groups=groups)
+		
+		self._groups = groups
 
-		self._weapon = None 
+		self._visible_sprites = self._groups[0]
+		self._obstacle_sprites = self._groups[2]
 
-		self.inventory = Inventory((visible_sprites, obstacle_sprites), self._weapon)
-		self.inventory.add_weapon(Fists(self),'Руки')
-		self.inventory.add_weapon(Bat(self),'Бита')
+		self._weapon = None
 
 		self.money = np.int32(0)
+
+		self.inventory = Inventory((self._visible_sprites, self._obstacle_sprites), self._weapon)
+
+		self.inventory.add_weapon(Fists(self),'Руки')
+		#self.inventory.add_weapon(Bat(self),'Бита')
+		#self.inventory.add_weapon(Tokarev(self), 'Пистолет Токарева')
 
 	def movement(self):
 		button = pg.key.get_pressed()
@@ -39,20 +46,21 @@ class Player(NPC):
 	def mouse_event(self,event):
 
 		if self._weapon != None:
-			if event.type == pg.MOUSEBUTTONDOWN:
-				if event.button == 1:
-					direction = engine.check_angle(self.rect, engine.get_mouse_pos(visible_sprites))
-					groups = (visible_sprites, obstacle_sprites)
-					match direction:
-						case 'left':
-							self._weapon.spawn_hit(direction, groups, npcs)
-						case 'right':
-							self._weapon.spawn_hit(direction, groups, npcs)
-						case 'top':
-							self._weapon.spawn_hit(direction, groups, npcs)
-						case 'bottom':
-							self._weapon.spawn_hit(direction, groups, npcs)	
-					engine.play_sound('materials/weapon/melee/hit.mp3')
+			pressed = pg.mouse.get_pressed()
+			if pressed[0]:
+
+				mouse_pos = get_mouse_pos(self._visible_sprites)
+					
+				groups = (self._visible_sprites, self._obstacle_sprites)
+
+				if hasattr(self._weapon, 'spawn_hit'):
+					direction = check_angle(self.rect, mouse_pos)
+					
+					self._weapon.hit(direction, groups)	
+
+				elif hasattr(self.weapon, 'shoot'):
+					self._weapon.shoot(mouse_pos, groups)
+
 							
 	def keyboard_event(self,event):
 		if event.type == pg.KEYDOWN:
@@ -60,9 +68,27 @@ class Player(NPC):
 				case pg.K_0:
 					self._weapon = self.inventory.choose_weapon(0)
 				case pg.K_1:
-					self._weapon = self.inventory.choose_weapon(1)
+					if self.inventory.choose_weapon(1) != None:
+						self._weapon = self.inventory.choose_weapon(1)
+				case pg.K_2:
+					if self.inventory.choose_weapon(2) != None:
+						self._weapon = self.inventory.choose_weapon(2)
+				case pg.K_3:
+					if self.inventory.choose_weapon(3) != None:
+						self._weapon = self.inventory.choose_weapon(3)
+				case pg.K_4:
+					if self.inventory.choose_weapon(4) != None:
+						self._weapon = self.inventory.choose_weapon(4)
+				case pg.K_5:
+					if self.inventory.choose_weapon(5) != None:
+						self._weapon = self.inventory.choose_weapon(5)
+				
+				case pg.K_r:
+					if hasattr(self._weapon, 'full_ammo'):
+						self._weapon.reload()
 				
 	def control(self,event):
+		#self.movement()
 		self.keyboard_event(event)
 		self.mouse_event(event)
 	def update(self):

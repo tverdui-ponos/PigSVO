@@ -1,109 +1,92 @@
 import pygame as pg
 import numpy as np
+import time as t
 
-#from MAP import visible_sprites, obstacle_sprites, physical_sprites, static_sprites, npcs, friendly_npcs, enemys_npcs
+from MATHLIB import check_angle
+
+import math
 
 image_libraly = {}
 sound_library = {}
 music_library = {}
 
+start_time = t.time()
 
-class EngineFunc:
-	def get_image(self,path, i_x, i_y):
-		image = image_libraly.get(path)
-		try:
-			if image == None:
-				image = pg.image.load(path)
-				image = pg.transform.scale(image, (i_x, i_y))
-				image_libraly[path] = image
-			return image
-		except Exception as ex:
-			print(f'Error loading image {path}', ex)
-			image = image_libraly.get('materials/effects/error.png')
-			if image == None:
-				image = pg.image.load('materials/effects/error.png')
-				image = pg.transform.scale(image, (i_x, i_y))
-				image_libraly[path] = image
-				return image			
+
+def get_image(path, i_x, i_y):
+	image = image_libraly.get(path)
+	try:
+		if image == None:
+			image = pg.image.load(path)
+			image = pg.transform.scale(image, (i_x, i_y))
+			image_libraly[path] = image
+		return image
+	except Exception as ex:
+		print(f'Error loading image {path}', ex)
+		image = image_libraly.get('materials/effects/error.png')
+		if image == None:
+			image = pg.image.load('materials/effects/error.png')
+			image = pg.transform.scale(image, (i_x, i_y))
+			image_libraly[path] = image
+			return image			
 
 	
-	def play_sound(self,path):
+def play_sound(path, volume=1.0):
+	try:
 		sound = sound_library.get(path)
-		try:
-			if sound == None:
-				sound = pg.mixer.Sound(path)
-				sound_library[path] = sound
-			sound.play()
-		except Exception as e:
-			print(f'Error loading sound {path}, {e}')
+		if sound is None:
+			sound = pg.mixer.Sound(path)
+			sound_library[path] = sound
+
+		sound.set_volume(volume)
+		sound.play()
+	except Exception as e:
+		print(f'Error loading sound {path}, {e}')
+			
 
 
 	
-	def play_music(self,path,mode):
-		music = music_library.get(path)
-		music = pg.mixer.music.load(path)
-		music_library[path] = music
-		pg.mixer.music.play(mode)
-		pg.mixer.music.set_volume(0.1)
-	
-	def length_of_vector(self,vector):
-		#vector = np.array(vector)
-		return math.sqrt((vector[0] * vector[0]) + (vector[1] * vector[1]))
-
-
-	def normalize_vector(self, vector):
-		vector = np.array(vector)
-		return vector / self.length_of_vector(vector)
-	
-	
-	def angle_between_vectors(self,vector1,vector2):
-		vector1 = np.array(vector1, dtype=float)
-		vector2 = np.array(vector2, dtype=float)
-
-		dx = vector2[0] - vector1[0]
-		dy = vector1[1] - vector2[1]
-
-		angle = np.arctan2(dy,dx)
-		return np.degrees(angle) % 360
+def play_music(path,mode):
+	music = music_library.get(path)
+	music = pg.mixer.music.load(path)
+	music_library[path] = music
+	pg.mixer.music.play(mode)
+	pg.mixer.music.set_volume(0.1)
 	
 
-	def check_angle(self, vector1, vector2):
-		angle = self.angle_between_vectors(vector1, vector2)
-		if 0 < angle <= 45 or 338 < angle <= 360:
-			return 'right'
-		elif 245 < angle <= 337:
-			return 'bottom'
-		elif 155 < angle <= 244:
-			return 'left'
-		elif 46 < angle <= 155:
-			return 'top'
-
 	
-	def get_mouse_pos(self, camera_group):
+def get_mouse_pos(camera_group):
 		
-		mouse_pos = pg.mouse.get_pos()
+	mouse_pos = pg.mouse.get_pos()
 		
-		world_mouse_pos = np.array(mouse_pos) + camera_group.offset
+	world_mouse_pos = np.array(mouse_pos) + camera_group.offset
 
-		return world_mouse_pos
+	return world_mouse_pos
 
-engine = EngineFunc()
+	
 
 
 
 class Collisions:
-	def __init__(self, npcs, enemys_npcs, friendly_npcs, 
-	physical_sprites, static_sprites):
-		self._npcs = npcs
-		self._physical_sprites = physical_sprites
-		self._static_sprites = static_sprites
+	def __init__(self, physical_sprites, static_spites, 
+	npcs_sprites, friendly_npcs_sprites, enemy_npcs_sprites):
 
-	def collision_between_physical_objects(self, objects1, objects2):
-		collision = pg.sprite.groupcollide(objects1, objects2, False, False)
+		self._physical_sprites = physical_sprites
+		self._static_sprites = static_spites
+
+		self._npcs_sprites = npcs_sprites
+		self._friendly_npcs_sprites = friendly_npcs_sprites
+		self._enemy_npcs_sprites = enemy_npcs_sprites
+
+
+
+
+	def collision_between_physical_objects(self):
+		collision = pg.sprite.groupcollide(self._physical_sprites, self._physical_sprites, False, False)
 		for sprite1,sprite_list in collision.items():
 			for sprite2 in sprite_list:
 				if sprite1 != sprite2:
-					direction = engine.check_angle(sprite1.rect, sprite2.rect)
+					direction = check_angle(sprite1.rect, sprite2.rect)
 					
 					match direction:
 						
@@ -117,11 +100,11 @@ class Collisions:
 							sprite1.rect.y -= 1
 	
 
-	def collison_betweeen_npc_and_static_objects(self, npcs, static_objects):
-		collision = pg.sprite.groupcollide(npcs, static_objects, False, False)
+	def collison_betweeen_npc_and_static_objects(self):
+		collision = pg.sprite.groupcollide(self._npcs_sprites, self._static_sprites, False, False)
 		for sprite1,sprite_list in collision.items():
 			for sprite2 in sprite_list:
-				direction = engine.check_angle(sprite1.rect, sprite2.rect)
+				direction = check_angle(sprite1.rect, sprite2.rect)
 				match direction:
 					case "left":
 						sprite1.rect.x += sprite1.speed
@@ -133,39 +116,42 @@ class Collisions:
 						sprite1.rect.y -= sprite1.speed	
 		
 
-	def collusion_between_enemies(self, friend, enemy):
-		collision = pg.sprite.groupcollide(friend, enemy, False, False)
+	def collusion_between_enemies(self):
+		collision = pg.sprite.groupcollide(self._friendly_npcs_sprites, self._enemy_npcs_sprites, False, False)
 		for sprite1,sprite_list in collision.items():
 			for sprite2 in sprite_list:
 				if sprite1 != sprite2:
 					sprite1.hp -= sprite2.damage
 
+	
+	def collusion(self):
+		self.collision_between_physical_objects()
+		self.collison_betweeen_npc_and_static_objects()
+		self.collusion_between_enemies()
 
 
 class SortCameraGroup(pg.sprite.Group):
-	_instance = None 
-
-
-	def __new__(cls, *args, **kwargs):
-		if cls._instance is None:
-			cls._instance = super().__new__(cls)
-			cls._instance.__init__(*args, **kwargs)
-			return cls._instance
-
-
 	def __init__(self):
-		if not hasattr(self, '_init'):
-			super().__init__()
-			self.display_surface = pg.display.get_surface()
-			self.size = np.array(self.display_surface.get_size()) // 2 
-			self.offset = pg.math.Vector2
-			self._init = True
-
+		super().__init__()
+		self.display_surface = pg.display.get_surface()
+		self.size = np.array(self.display_surface.get_size()) // 2
+		self.offset = pg.math.Vector2()
+		
 	def custom_draw(self, player, *screen):
+
 		self.offset = player.rect.center - self.size
+
+		camera_rect = pg.Rect(
+			self.offset[0], 
+			self.offset[1],
+			self.display_surface.get_width(),
+			self.display_surface.get_height()
+		)
+
 		for sprite in self.sprites():
-			offset_pos = sprite.rect.topleft - self.offset
-			self.display_surface.blit(sprite.image, offset_pos)
+			if sprite.rect.colliderect(camera_rect):
+				offset_pos = sprite.rect.topleft - self.offset
+				self.display_surface.blit(sprite.image, offset_pos)
 
 
 
@@ -180,8 +166,14 @@ class Inventory:
 
 
 	def add_weapon(self,weapon,name):
-		self._inv[0].append(weapon)
-		self._inv[1].append(name)
+		for i in self._inv[0]:
+			if type(i) == type(weapon):
+				if hasattr(weapon, 'full_ammo'):
+					i.full_ammo += i._magazine_volume
+				break
+		else:
+			self._inv[0].append(weapon)
+			self._inv[1].append(name)
 	
 
 	def get_name(self):
@@ -189,6 +181,8 @@ class Inventory:
 			for i, weapon in enumerate(self._inv[0]):
 				if self.weapon == weapon:
 					return self._inv[1][i]
+
+			return "Нету оружия"
 
 
 	def choose_weapon(self,ind):
@@ -204,6 +198,6 @@ class Inventory:
 			self._visible_sprites.add(self.weapon)
 			self._obstacle_sprites.add(self.weapon)
 
-			engine.play_sound('materials/effects/ammo_pickup.mp3')
+			play_sound('materials/effects/ammo_pickup.mp3')
 
 			return self.weapon
