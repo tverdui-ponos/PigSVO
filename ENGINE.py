@@ -201,3 +201,11 @@ class Inventory:
 			play_sound('materials/effects/ammo_pickup.mp3')
 
 			return self.weapon
+
+
+
+
+
+class Spawner:
+	def __init__(self, display):
+		self._display = display

@@ -10,6 +10,8 @@ from OBJECT import Entity, Money
 
 from PARTICLE import Particle, BloodParticle
 
+from AI import *
+
 
 class NPC(Entity):
 	def __init__(self, x,y,hp,speed,damage,filename,width,height, groups):
@@ -39,12 +41,15 @@ class NPC(Entity):
 
 
 class Pig(NPC):
-	def __init__(self,x,y,groups):
+	def __init__(self,x,y,groups, player):
 		super().__init__(x,y,hp=50, speed=4, damage=1, filename="materials/npc/pig/pig.png", width=100, height=100, groups=groups)
 		self._visible_sprites = groups[0]
 		self._obstacle_sprites = groups[2]
+
+		self.ai = Ai(self, player)
+
 	def update(self):
-		pass
+		self.ai.run()
 	
 	@property
 	def hp(self):

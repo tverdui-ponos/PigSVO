@@ -13,7 +13,7 @@ from GUI import Gui
 
 
 pg.init()
-pg.display.set_caption('федя натурал')
+pg.display.set_caption('PigSVO')
 #pygame.display.set_icon(pygame.image.load("app.bmp"))
 pg.mouse.set_cursor(pg.SYSTEM_CURSOR_CROSSHAIR)
 

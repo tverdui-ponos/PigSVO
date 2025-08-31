@@ -103,7 +103,7 @@ class Map():
             case "T":
                 return Object(x,y,(f'materials/map/object/trees/tree{r.randint(1,6)}.png'), 200,300, (self.visible_sprites, self.static_spites))
             case "p":
-                return Pig(x,y, (self.visible_sprites, self.physical_sprites, self.obstacle_sprites, self.npcs_sprites, self.enemy_npcs_sprites))
+                return Pig(x,y, (self.visible_sprites, self.physical_sprites, self.obstacle_sprites, self.npcs_sprites, self.enemy_npcs_sprites), self.player)
             case "c":
                 return Crate(x, y, (self.visible_sprites, self.physical_sprites, self.obstacle_sprites))
             case 't':

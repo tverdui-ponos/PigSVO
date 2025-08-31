@@ -5,36 +5,26 @@ import numpy as np
 
 from MATHLIB import *
 
+from ENGINE import play_sound
+
 
 
 class Ai:
-    def __init__(self, npc, groups): 
-        self._groups = group
-        self._tasks = []
+    def __init__(self, npc, player): 
+        self._player = player
+        self.npc = npc
 
-    def add_task(self, npc, task='walk'):
-        match task:
-            case 'walk':
-                self.walk()
-    
-    def goto(self, npc, direction):
-        where = np.array(np.array(direction) - np.array(npc.rect.center))
+        self._direction = ()
+
+    def goto(self, direction):
+        where = np.array(np.array(direction) - np.array(self.npc.rect.center))
 
         if length_of_vector(where) >= 0:
             where = normalize_vector(where)
         
-        npc.rect += where * npc.rect.speed
-
-
-
-    def walk(self, npc, max_distance=100):
-
-        distance = np.array((r.randint(-max_distance, max_distance), r.randint(-max_distance, max_distance)))
-
-        self._tasks.append(direction)
+        if where.all() != 0:
+            self.npc.rect.x += where[0] * self.npc.speed
+            self.npc.rect.y += where[1] * self.npc.speed
     
-
-    def update(self):
-        for npc, tasks in self._tasks:
-            if tasks is None:
-                self.add_task(npc)
+    def run(self):
+        self.goto(self._player.rect.center)
