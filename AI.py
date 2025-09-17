@@ -22,7 +22,7 @@ class Ai:
         if length_of_vector(where) >= 0:
             where = normalize_vector(where)
         
-        if where.all() != 0:
+        if where.all() != 0 and direction != self.npc.rect.center:
             self.npc.rect.x += where[0] * self.npc.speed
             self.npc.rect.y += where[1] * self.npc.speed
     

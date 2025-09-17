@@ -1,10 +1,12 @@
 import pygame as pg
 import numpy as np
+import random as r
+
 from ENGINE import get_image, play_sound
 
 from PARTICLE import BloodParticle, SawdustParticle
 
-
+#from WEAPON import *
 
 class Object(pg.sprite.Sprite):
 	def __init__(self,x,y,filename,width,height, *groups):
@@ -71,7 +73,12 @@ class Crate(Entity):
 		self._visible_sprites = groups[0]
 		self._physical_sprites = groups[1]
 		self._obstacle_sprites = groups[2]
+		
 
+	def spawn_supplies(self):
+		chance = bool(r.randint(0,1))
+		if chance:
+			Money(self.rect.x, self.rect.y, (self._visible_sprites, self._obstacle_sprites))
 
 	@property
 	def hp(self):
@@ -83,6 +90,9 @@ class Crate(Entity):
 			SawdustParticle(self.rect.x, self.rect.y, (self._visible_sprites, self._obstacle_sprites))
 		self._hp = hp
 		if self._hp <= 0:
+			SawdustParticle(self.rect.x, self.rect.y, (self._visible_sprites, self._obstacle_sprites))
+			SawdustParticle(self.rect.x, self.rect.y, (self._visible_sprites, self._obstacle_sprites))
+			self.spawn_supplies()
 			self.kill()
 
 
@@ -98,7 +108,7 @@ class Crate(Entity):
 # Pickaple
 
 class Money(Object):
-	def __init__(self, x,y, groups):
+	def __init__(self, x, y, groups):
 		super().__init__(x, y, 'materials/effects/money/bitcoin.png', 50, 50, groups)
 
 		self._obstacle_sprites = groups[1]

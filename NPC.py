@@ -23,6 +23,10 @@ class NPC(Entity):
 	def speed(self):
 		return self._speed
 
+	@speed.setter
+	def speed(self, speed):
+		self._speed = speed	
+
 	@property
 	def damage(self):
 		return self._damage
@@ -42,11 +46,15 @@ class NPC(Entity):
 
 class Pig(NPC):
 	def __init__(self,x,y,groups, player):
-		super().__init__(x,y,hp=50, speed=4, damage=1, filename="materials/npc/pig/pig.png", width=100, height=100, groups=groups)
+		super().__init__(x,y,hp=50, speed=8, damage=1, filename="materials/npc/pig/pig.png", width=100, height=100, groups=groups)
 		self._visible_sprites = groups[0]
 		self._obstacle_sprites = groups[2]
 
+		
+
 		self.ai = Ai(self, player)
+
+		play_sound(f"materials/npc/pig/sound/pig_idle{r.randint(1,3)}.ogg")
 
 	def update(self):
 		self.ai.run()

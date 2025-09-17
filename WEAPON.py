@@ -17,6 +17,7 @@ EMPTY_SOUND = 'materials/weapon/firearms/empty.mp3'
 
 
 
+
 class Weapon(Object):
 	def __init__(self,x, y, damage, width, height, player, filename, sounds):
 		super().__init__(x=player.x, y=player.y, filename=filename,
@@ -116,12 +117,16 @@ class FireArms(Weapon):
 
 		self.full_ammo = 0
 
+	def fire(self,direction,groups):
+		Bullet(self._player, direction, groups)
+		play_sound(self.sounds[0])
+
+
 	def shoot(self, direction, groups):
 		if self._delay == False and self.magazine_ammo > 0:
 			self._delay = True 
 			self.start_time = t.time()
-			Bullet(self._player, direction, groups)
-			play_sound(self.sounds[0])
+			self.fire(direction,groups)
 			self.magazine_ammo -= 1
 		elif self.magazine_ammo <= 0:
 			play_sound(EMPTY_SOUND)
@@ -191,7 +196,7 @@ class Mosin(FireArms):
 						filename = 'materials/weapon/firearms/mosin/mosin.png',
 						sounds=('materials/weapon/firearms/mosin/sound/fire.mp3',
 						'', 'materials/weapon/firearms/mosin/sound/reload.mp3'),
-						magazine_volume = 1, 
+						magazine_volume = 6, 
 						delay_before_shoots = 0.8, 
 						ammo_type = 'pistol')
 

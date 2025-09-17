@@ -2,6 +2,8 @@ import pygame as pg
 import json
 import numpy as np
 import random as r
+import time as t
+
 
 from ENGINE import Collisions,SortCameraGroup, play_music, play_sound, get_image
 from NPC import *
@@ -13,7 +15,7 @@ from WEAPON import Bat, Tokarev, Mosin, Ak47
 
 TILE_SIZE = np.int16(128)
 
-
+START_TIME = t.time()
 
 class Tile(pg.sprite.Sprite):
     def __init__(self, x, y, groups,image):
@@ -25,6 +27,8 @@ class Tile(pg.sprite.Sprite):
 class Map():
     def __init__(self,map_name):
         self.display_surface = pg.display.get_surface()
+
+        self.current_time = 0
 
 
         #
@@ -43,6 +47,7 @@ class Map():
         self.friendly_npcs_sprites = pg.sprite.Group()
         self.enemy_npcs_sprites = pg.sprite.Group()
         #
+
 
 
         self.create_map(map_name)
@@ -64,6 +69,7 @@ class Map():
             #print(map_json)
             WORLD_MAP = map_json['tilemap']
             OBJECT_MAP = map_json['objectmap']
+            self.MAP_SIZE = (len(WORLD_MAP[0]) * TILE_SIZE, len(WORLD_MAP) * TILE_SIZE)
         for row_index, row in enumerate(WORLD_MAP):
             for col_index, col in enumerate(row):
                 x = np.int64(col_index) * TILE_SIZE
@@ -99,16 +105,21 @@ class Map():
         '''
         match type:
             case "P":
-                self.player = Player(x,y, (self.visible_sprites, self.physical_sprites, self.obstacle_sprites, self.npcs_sprites, self.friendly_npcs_sprites))
+                self.player = Player(x, y, (self.visible_sprites, self.physical_sprites, self.obstacle_sprites, self.npcs_sprites, self.friendly_npcs_sprites))
+
+                weapon_list = {"W_Bat": Bat(self.player), 
+                "W_Tokarev": Tokarev(self.player),
+                "W_Ak47": Ak47(self.player),
+                "W_Mosin": Mosin(self.player)}
+
             case "T":
-                return Object(x,y,(f'materials/map/object/trees/tree{r.randint(1,6)}.png'), 200,300, (self.visible_sprites, self.static_spites))
+                return Object(x, y,(f'materials/map/object/trees/tree{r.randint(1,6)}.png'), 200,300, (self.visible_sprites, self.static_spites))
             case "p":
-                return Pig(x,y, (self.visible_sprites, self.physical_sprites, self.obstacle_sprites, self.npcs_sprites, self.enemy_npcs_sprites), self.player)
+                return Pig(x, y, (self.visible_sprites, self.physical_sprites, self.obstacle_sprites, self.npcs_sprites, self.enemy_npcs_sprites), self.player)
             case "c":
                 return Crate(x, y, (self.visible_sprites, self.physical_sprites, self.obstacle_sprites))
             case 't':
                 return Entity(x, y, 'materials/map/object/target.png', 100, 130, (self.visible_sprites, self.obstacle_sprites), 500)
-
             case 'W_Mosin':
                 return WeaponObject(x, y, Mosin(self.player), (self.visible_sprites, self.obstacle_sprites))
             
@@ -127,7 +138,22 @@ class Map():
         self.visible_sprites.custom_draw(self.player, self.display_surface)
         self.collusion.collusion()
         self.obstacle_sprites.update()
+        self.spawner()
     def events(self, event):
         self.player.control(event)
+        
 
+
+
+    def spawner(self):
+        self.current_time = round(t.time() - START_TIME,2)
+        if self.current_time % 10.00 == 0:
+            #supplies = r.randint(0,100)
+            pos = (r.randint(0, self.MAP_SIZE[0]), r.randint(100, self.MAP_SIZE[1]))
+            #if supplies < 20:
+                #pass
+                #WeaponObject(pos[0], pos[1], weapon_list[r.randint(0, len(weapon_list)) - 1], (self.visible_sprites, self.obstacle_sprites))
+            #else:
+            Pig(pos[0], pos[1], (self.visible_sprites, self.physical_sprites, self.obstacle_sprites, self.npcs_sprites, self.enemy_npcs_sprites), self.player)
+        
 
