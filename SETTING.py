@@ -1,6 +1,6 @@
 from pygame import display
 
-FPS = 200
+FPS = 60
 #SCREEN_WIDTH =
 
 

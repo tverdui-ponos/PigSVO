@@ -178,7 +178,7 @@ class Bat(MeleeWeapon):
 class Tokarev(FireArms):
 	def __init__(self, player):
 		super().__init__(damage = 8, 
-						width = 70,height = 30, player = player,
+						width = 70, height = 30, player = player,
 						filename = 'materials/weapon/firearms/tokarev_pistol/tokarev.png',
 						sounds=('materials/weapon/firearms/tokarev_pistol/sound/shoot.mp3',
 						'', 'materials/weapon/firearms/tokarev_pistol/sound/reload.mp3'),
@@ -192,7 +192,7 @@ class Tokarev(FireArms):
 class Mosin(FireArms):
 	def __init__(self, player):
 		super().__init__(damage = 40, 
-						width = 220,height = 70, player = player,
+						width = 220, height = 70, player = player,
 						filename = 'materials/weapon/firearms/mosin/mosin.png',
 						sounds=('materials/weapon/firearms/mosin/sound/fire.mp3',
 						'', 'materials/weapon/firearms/mosin/sound/reload.mp3'),
@@ -205,10 +205,41 @@ class Mosin(FireArms):
 class Ak47(FireArms):
 	def __init__(self, player):
 		super().__init__(damage = 10, 
-						width = 200,height = 40, player = player,
+						width = 200, height = 40, player = player,
 						filename = 'materials/weapon/firearms/ak47/ak47.png',
 						sounds=('materials/weapon/firearms/ak47/sound/shoot.mp3',
 						'', 'materials/weapon/firearms/ak47/sound/reload.mp3'),
 						magazine_volume = 30, 
-						delay_before_shoots = 0.05, 
+						delay_before_shoots = 0.02, 
 						ammo_type = 'pistol')
+
+class Eagle(FireArms):
+	def __init__(self, player):
+		super().__init__(damage = 20, 
+						width = 80, height = 40, player = player,
+						filename = 'materials/weapon/firearms/eagle/eagle.png',
+						sounds=('materials/weapon/firearms/eagle/sound/fire.mp3',
+						'', 'materials/weapon/firearms/eagle/sound/reload.mp3'),
+						magazine_volume = 7, 
+						delay_before_shoots = 0.7, 
+						ammo_type = 'pistol')
+
+
+class Shotgun(FireArms):
+	def __init__(self, player):
+		super().__init__(damage = 30, 
+						width = 140, height = 40, player = player,
+						filename = 'materials/weapon/firearms/shotgun/shotgun.png',
+						sounds=('materials/weapon/firearms/shotgun/sound/shoot.mp3',
+						'', 'materials/weapon/firearms/shotgun/sound/reload.mp3'),
+						magazine_volume = 8, 
+						delay_before_shoots = 1, 
+						ammo_type = 'pistol')
+
+
+	def fire(self,direction,groups):
+		Bullet(self._player, np.array(direction) + r.randint(-50, 0), groups)
+		Bullet(self._player, direction, groups)
+		Bullet(self._player, np.array(direction) + r.randint(0 ,50), groups)
+		play_sound(self.sounds[0])
+

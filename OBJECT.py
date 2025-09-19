@@ -138,3 +138,9 @@ class WeaponObject(Object):
 					sprite.inventory.add_weapon(self._weapon, (self._weapon.filename.split('/')[-1]).split('.')[0])
 					self.kill()
 					break
+
+
+
+class Stone(Object):
+	def __init__(self, x, y, groups):
+		super().__init__(x, y, "materials/map/object/stones/stone1.png", 200, 150, groups)

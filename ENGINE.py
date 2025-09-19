@@ -59,7 +59,7 @@ def get_mouse_pos(camera_group):
 		
 	mouse_pos = pg.mouse.get_pos()
 		
-	world_mouse_pos = np.array(mouse_pos) + camera_group.offset
+	world_mouse_pos = (np.array(mouse_pos) / camera_group.zoom_scale) + camera_group.offset
 
 	return world_mouse_pos
 
@@ -135,23 +135,43 @@ class SortCameraGroup(pg.sprite.Group):
 		super().__init__()
 		self.display_surface = pg.display.get_surface()
 		self.size = np.array(self.display_surface.get_size()) // 2
-		self.offset = pg.math.Vector2()
+		self.offset = np.array([0,0])
+		self.zoom_scale = 0.8
+
+		self.scaled_images = {}
 		
 	def custom_draw(self, player, *screen):
 
-		self.offset = player.rect.center - self.size
+		self.offset[0] = player.rect.centerx - self.size[0] / self.zoom_scale
+		self.offset[1] = player.rect.centery - self.size[1] / self.zoom_scale
+		
 
 		camera_rect = pg.Rect(
 			self.offset[0], 
 			self.offset[1],
-			self.display_surface.get_width(),
-			self.display_surface.get_height()
+			self.display_surface.get_width() / self.zoom_scale,
+			self.display_surface.get_height() / self.zoom_scale
 		)
 
 		for sprite in self.sprites():
 			if sprite.rect.colliderect(camera_rect):
-				offset_pos = sprite.rect.topleft - self.offset
-				self.display_surface.blit(sprite.image, offset_pos)
+				offset_pos = (sprite.rect.topleft - self.offset) * self.zoom_scale
+
+				image_key = (id(sprite.image), self.zoom_scale)
+
+				if image_key not in self.scaled_images:
+					self.scaled_images[image_key] = pg.transform.scale(sprite.image, (np.int32(sprite.rect.width * self.zoom_scale),
+					np.int32(sprite.rect.height * self.zoom_scale)))
+
+				self.display_surface.blit(self.scaled_images[image_key], offset_pos)
+		
+	def zoom(self, amount):
+		old_zoom = self.zoom_scale
+		self.zoom_scale = max(0.5, min(3.0, self.zoom_scale + amount))
+
+		if old_zoom != self.zoom_scale:
+			self.scaled_images.clear()
+
 
 
 

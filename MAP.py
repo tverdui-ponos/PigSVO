@@ -9,7 +9,7 @@ from ENGINE import Collisions,SortCameraGroup, play_music, play_sound, get_image
 from NPC import *
 from PLAYER import *
 from OBJECT import *
-from WEAPON import Bat, Tokarev, Mosin, Ak47
+from WEAPON import *
 
 
 
@@ -29,6 +29,7 @@ class Map():
         self.display_surface = pg.display.get_surface()
 
         self.current_time = 0
+        self.delay_before_action = 3
 
 
         #
@@ -69,7 +70,7 @@ class Map():
             #print(map_json)
             WORLD_MAP = map_json['tilemap']
             OBJECT_MAP = map_json['objectmap']
-            self.MAP_SIZE = (len(WORLD_MAP[0]) * TILE_SIZE, len(WORLD_MAP) * TILE_SIZE)
+            self.MAP_SIZE = ((len(WORLD_MAP[0]) - 2) * TILE_SIZE, (len(WORLD_MAP) - 2) * TILE_SIZE)
         for row_index, row in enumerate(WORLD_MAP):
             for col_index, col in enumerate(row):
                 x = np.int64(col_index) * TILE_SIZE
@@ -94,12 +95,13 @@ class Map():
                 return Tile(x, y, (self.visible_sprites), (f"materials/map/tilemap/dirt/dirt.png"))
 
             case "G":
-                return Tile(x, y, (self.visible_sprites), (f"materials/map/tilemap/grass/grass{r.randint(1,5)}.png"))
+                return Tile(x, y, (self.visible_sprites), (f"materials/map/tilemap/grass/newgrass.png"))
 
 
     def spawn_object(self,type,x,y):
         ''' P - Player
             T - Tree
+            S - Stone
             p - Pig
             W_...(name_weapon) - WeaponObject
         '''
@@ -107,19 +109,26 @@ class Map():
             case "P":
                 self.player = Player(x, y, (self.visible_sprites, self.physical_sprites, self.obstacle_sprites, self.npcs_sprites, self.friendly_npcs_sprites))
 
-                weapon_list = {"W_Bat": Bat(self.player), 
+                self.weapon_list = {"W_Bat": Bat(self.player), 
                 "W_Tokarev": Tokarev(self.player),
                 "W_Ak47": Ak47(self.player),
-                "W_Mosin": Mosin(self.player)}
+                "W_Mosin": Mosin(self.player),
+                'W_Eagle': Eagle(self.player),
+                'W_Shotgun': Shotgun(self.player)}
 
             case "T":
                 return Object(x, y,(f'materials/map/object/trees/tree{r.randint(1,6)}.png'), 200,300, (self.visible_sprites, self.static_spites))
+            
+            case "S":
+                return Stone(x, y, (self.visible_sprites, self.static_spites))
+
             case "p":
                 return Pig(x, y, (self.visible_sprites, self.physical_sprites, self.obstacle_sprites, self.npcs_sprites, self.enemy_npcs_sprites), self.player)
             case "c":
                 return Crate(x, y, (self.visible_sprites, self.physical_sprites, self.obstacle_sprites))
             case 't':
                 return Entity(x, y, 'materials/map/object/target.png', 100, 130, (self.visible_sprites, self.obstacle_sprites), 500)
+
             case 'W_Mosin':
                 return WeaponObject(x, y, Mosin(self.player), (self.visible_sprites, self.obstacle_sprites))
             
@@ -128,8 +137,15 @@ class Map():
             
             case 'W_Tokarev':
                 return WeaponObject(x, y, Tokarev(self.player), (self.visible_sprites, self.obstacle_sprites))
+
             case 'W_Bat':
                 return WeaponObject(x, y, Bat(self.player), (self.visible_sprites, self.obstacle_sprites))
+
+            case 'W_Eagle':
+                return WeaponObject(x, y, Eagle(self.player), (self.visible_sprites, self.obstacle_sprites))
+
+            case 'W_Shotgun':
+                return WeaponObject(x, y, Shotgun(self.player), (self.visible_sprites, self.obstacle_sprites))
 
 
     
@@ -141,19 +157,25 @@ class Map():
         self.spawner()
     def events(self, event):
         self.player.control(event)
-        
+        if event.type == pg.MOUSEWHEEL:
+            zoom_amount = event.y * 0.2
+            self.visible_sprites.zoom(zoom_amount)
+				
 
 
 
     def spawner(self):
-        self.current_time = round(t.time() - START_TIME,2)
-        if self.current_time % 10.00 == 0:
-            #supplies = r.randint(0,100)
+        self.current_time = round(t.time() - START_TIME, 2)
+        if self.current_time % self.delay_before_action == 0:
+            '''if self.delay_before_action > 0.3:
+                self.delay_before_action -= 0.1'''
+            supplies = r.randint(0,100)
             pos = (r.randint(0, self.MAP_SIZE[0]), r.randint(100, self.MAP_SIZE[1]))
-            #if supplies < 20:
-                #pass
-                #WeaponObject(pos[0], pos[1], weapon_list[r.randint(0, len(weapon_list)) - 1], (self.visible_sprites, self.obstacle_sprites))
-            #else:
-            Pig(pos[0], pos[1], (self.visible_sprites, self.physical_sprites, self.obstacle_sprites, self.npcs_sprites, self.enemy_npcs_sprites), self.player)
+            if supplies < 5:
+                Crate(pos[0], pos[1], (self.visible_sprites, self.physical_sprites, self.obstacle_sprites) )
+            elif supplies < 30:
+                WeaponObject(pos[0], pos[1], r.choice(list(self.weapon_list.values())), (self.visible_sprites, self.obstacle_sprites))
+            else:
+                Pig(pos[0], pos[1], (self.visible_sprites, self.physical_sprites, self.obstacle_sprites, self.npcs_sprites, self.enemy_npcs_sprites), self.player)
         
 

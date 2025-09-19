@@ -46,7 +46,7 @@ class NPC(Entity):
 
 class Pig(NPC):
 	def __init__(self,x,y,groups, player):
-		super().__init__(x,y,hp=50, speed=8, damage=1, filename="materials/npc/pig/pig.png", width=100, height=100, groups=groups)
+		super().__init__(x,y,hp=50, speed=12, damage=1, filename="materials/npc/pig/pig.png", width=100, height=100, groups=groups)
 		self._visible_sprites = groups[0]
 		self._obstacle_sprites = groups[2]
 

@@ -27,7 +27,7 @@ class Game:
 		self.screen = pg.display.set_mode((SCREEN_WIDTH[0], SCREEN_WIDTH[1]))
 		self.done = False
 		
-		self.map = Map('military_crime')
+		self.map = Map('map1')
 		self.gui = Gui(self.map.player)
 		
 		self.clock = pg.time.Clock()
@@ -36,6 +36,7 @@ class Game:
 		for event in pg.event.get():
 			if event.type == pg.QUIT:					
 				self.done = True
+
 			self.map.events(event)
 
 	def render(self):
