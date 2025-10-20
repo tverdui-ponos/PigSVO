@@ -157,11 +157,14 @@ class SortCameraGroup(pg.sprite.Group):
 			if sprite.rect.colliderect(camera_rect):
 				offset_pos = (sprite.rect.topleft - self.offset) * self.zoom_scale
 
-				image_key = (id(sprite.image), self.zoom_scale)
+				if not hasattr(sprite, 'image') or sprite.image is None:
+					continue
+
+				image_key = (id(sprite.image), sprite.rect.size, self.zoom_scale)
 
 				if image_key not in self.scaled_images:
-					self.scaled_images[image_key] = pg.transform.scale(sprite.image, (np.int32(sprite.rect.width * self.zoom_scale),
-					np.int32(sprite.rect.height * self.zoom_scale)))
+					self.scaled_images[image_key] = pg.transform.scale(sprite.image, ((sprite.rect.width * self.zoom_scale),
+					(sprite.rect.height * self.zoom_scale)))
 
 				self.display_surface.blit(self.scaled_images[image_key], offset_pos)
 		
